@@ -78,7 +78,7 @@ function AB:HandleMicroButton(button)
 		button.Flash:SetTexture()
 	end
 
-	local l, r, t, b = 0.22, 0.81, 0.26, 0.82
+	local l, r, t, b = 0.05, 0.95, 0.05, 0.95
 	if not E.Retail then
 		l, r, t, b = 0.17, 0.87, 0.5, 0.908
 	end
