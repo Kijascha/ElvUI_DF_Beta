@@ -70,6 +70,7 @@ function DB:ReputationBar_Update()
 			minValue, maxValue = 0, majorFactionData.renownLevelThreshold
 			curValue = C_MajorFactions_HasMaximumRenown(factionID) and majorFactionData.renownLevelThreshold or majorFactionData.renownReputationEarned or 0
 			label = format('%s%s|r %s', BLUE_COLOR_HEX, RENOWN_LEVEL_LABEL, majorFactionData.renownLevel)
+			renownColor = BLUE_FONT_COLOR
 		end
 	elseif C_Reputation_IsFactionParagon(factionID) then
 		local current, threshold
