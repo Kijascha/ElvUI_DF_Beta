@@ -41,8 +41,7 @@ function DB:ReputationBar_Update()
 	local displayString, textFormat, label, rewardPending = '', DB.db.reputation.textFormat
 	local name, reaction, minValue, maxValue, curValue, factionID = GetWatchedFactionInfo()
 	local standingText, friendshipID, nextThreshold, _
-	local renownColor = nil 
-	
+
 	if E.WoW10 then
 		local reputationInfo = GetFriendshipReputation(factionID)
 		friendshipID = reputationInfo.friendshipFactionID
@@ -91,10 +90,6 @@ function DB:ReputationBar_Update()
 	local customReaction = reaction == 9 or reaction == 10 -- 9 is paragon, 10 is renown
 	local color = (customColors or customReaction) and DB.db.colors.factionColors[reaction] or _G.FACTION_BAR_COLORS[reaction]
 	local alpha = not customColors and DB.db.colors.reputationAlpha
-	
-	if E.WoW10 and renownColor then -- change to renown color when renown faction is being tracked
-		color = renownColor 
-	end
 
 	bar:SetStatusBarColor(color.r, color.g, color.b, alpha or color.a or 1)
 	bar:SetMinMaxValues(minValue, maxValue)
