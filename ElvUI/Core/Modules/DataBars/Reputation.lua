@@ -149,9 +149,28 @@ function DB:ReputationBar_OnEnter()
 			GameTooltip:AddDoubleLine(STANDING..':', (friendID and friendTextLevel) or standing, 1, 1, 1)
 		end
 
-		if isMajorFaction and not C_MajorFactions_HasMaximumRenown(factionID) then
+		if isMajorFaction and not C_MajorFactions_HasMaximumRenown(factionID) then			
 			local majorFactionData = C_MajorFactions_GetMajorFactionData(factionID)
-			GameTooltip:AddLine(RENOWN_LEVEL_LABEL .. majorFactionData.renownLevel, BLUE_FONT_COLOR.r, BLUE_FONT_COLOR.g, BLUE_FONT_COLOR.b)
+			local lineDataText1 = {
+					leftText = L["To show the reputation frame:"],
+					rightText = L["Left Click"],
+					leftColor = CreateColor(.5, .5, .5, 1),
+					rightColor = CreateColor(.25, 1, .34, 1),
+					wrapped = false,
+					leftOffsetPixels = nil,
+			}
+			local lineDataText2 = {
+				leftText = L["For more details about your current renown level:"],
+				rightText = L["Hold Shift + Left Click"],
+				leftColor = CreateColor(.5, .5, .5, 1),
+				rightColor = CreateColor(.25, 1, .34, 1),
+				wrapped = false,
+				leftOffsetPixels = nil,
+			}
+			GameTooltip:AddDoubleLine(L["Current Renown Level:"], RENOWN_LEVEL_LABEL .. ' ' .. majorFactionData.renownLevel,1,1,1, BLUE_FONT_COLOR.r, BLUE_FONT_COLOR.g, BLUE_FONT_COLOR.b)
+			GameTooltip:AddLine(' ')
+			GameTooltip:AddLineDataText(lineDataText1)
+			GameTooltip:AddLineDataText(lineDataText2)
 		elseif not isMajorFaction and (reaction ~= _G.MAX_REPUTATION_REACTION or isParagon) then
 			local current, maximum, percent = GetValues(curValue, minValue, maxValue)
 			GameTooltip:AddDoubleLine(REPUTATION..':', format('%d / %d (%d%%)', current, maximum, percent), 1, 1, 1)
@@ -162,7 +181,16 @@ function DB:ReputationBar_OnEnter()
 end
 
 function DB:ReputationBar_OnClick()
-	ToggleCharacter('ReputationFrame')
+	if InCombatLockdown() then return end
+	local _, _, _, _, _, factionID = GetWatchedFactionInfo()	
+	local isMajorFaction = factionID and C_Reputation_IsMajorFaction(factionID)
+
+	if isMajorFaction and IsShiftKeyDown() then
+		ReputationDetailViewRenownButton.factionID = factionID
+		ReputationDetailViewRenownButton:OnClick()
+	else		
+		ToggleCharacter('ReputationFrame')
+	end
 end
 
 function DB:ReputationBar_Toggle()
