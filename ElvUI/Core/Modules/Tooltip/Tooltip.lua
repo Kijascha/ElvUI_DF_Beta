@@ -526,8 +526,8 @@ function TT:AddMythicInfo(tt, unit)
 	end
 end
 
-function TT:GameTooltip_OnTooltipSetUnit(tt)
-	if tt:IsForbidden() or not TT.db.visibility then return end
+local function OnTooltipSetUnit(tt, ttData) -- For WoW10 and the new tooltip stuff
+	if not E.WoW10 and tt:IsForbidden() or not TT.db.visibility then return end
 
 	local _, unit = tt:GetUnit()
 	local isPlayerUnit = UnitIsPlayer(unit)
@@ -583,16 +583,19 @@ function TT:GameTooltip_OnTooltipSetUnit(tt)
 		end
 	end
 
-	if color then
+	if color then -- in WoW10 on training dummies the bar color is flickering between both colors
 		tt.StatusBar:SetStatusBarColor(color.r, color.g, color.b)
 	else
 		tt.StatusBar:SetStatusBarColor(0.6, 0.6, 0.6)
 	end
 
-	local textWidth = tt.StatusBar.text:GetStringWidth()
+	local textWidth = tt.StatusBar.text and tt.StatusBar.text:GetStringWidth()
 	if textWidth then
 		tt:SetMinimumWidth(textWidth)
 	end
+end
+function TT:GameTooltip_OnTooltipSetUnit(tt, ttData) -- For Retail and lower -> the method call with ':' doesn't in WoW10 with this new tooltip stuff
+	OnTooltipSetUnit(tt, ttData)
 end
 
 function TT:GameTooltipStatusBar_OnValueChanged(tt, value)
@@ -662,17 +665,24 @@ function TT:EmbeddedItemTooltip_QuestReward(tt)
 	end
 end
 
-function TT:GameTooltip_OnTooltipSetItem(tt)
-	if tt:IsForbidden() or not TT.db.visibility then return end
+local function OnTooltipSetItem(tt, ttData) -- For WoW10 and the new tooltip stuff
+	if not E.WoW10 and tt:IsForbidden() or not TT.db.visibility then return end
 
-	local owner = tt:GetOwner()
-	local ownerName = owner and owner.GetName and owner:GetName()
-	if ownerName and (strfind(ownerName, 'ElvUI_Container') or strfind(ownerName, 'ElvUI_BankContainer')) and not TT:IsModKeyDown(TT.db.visibility.bags) then
-		tt:Hide()
-		return
+	if not E.Wow10 then
+		local owner = tt:GetOwner()
+		local ownerName = owner and owner.GetName and owner:GetName()
+		if ownerName and (strfind(ownerName, 'ElvUI_Container') or strfind(ownerName, 'ElvUI_BankContainer')) and not TT:IsModKeyDown(TT.db.visibility.bags) then
+			tt:Hide()
+			return
+		end
 	end
 
-	local name, link = tt:GetItem()
+	local name, link
+	if E.WoW10 then 
+		name, link = _G.TooltipUtil.GetDisplayedItem(tt)
+	else
+		name, link = tt:GetItem()
+	end	
 
 	if not E.Retail and name == '' and _G.CraftFrame and _G.CraftFrame:IsShown() then
 		local reagentIndex = ownerName and tonumber(strmatch(ownerName, 'Reagent(%d+)'))
@@ -687,11 +697,12 @@ function TT:GameTooltip_OnTooltipSetItem(tt)
 		local _, _, quality = GetItemInfo(link)
 		if quality and quality > 1 then
 			if tt.NineSlice then
-				tt.NineSlice:SetBorderColor(GetItemQualityColor(quality))
+				local r,g,b = GetItemQualityColor(quality)
+				tt.NineSlice:SetBorderColor(r,g,b,1)
 			else
-				tt:SetBackdropBorderColor(GetItemQualityColor(quality))
+				local r,g,b = GetItemQualityColor(quality)
+				tt:SetBackdropBorderColor(r,g,b,1)
 			end
-
 			tt.qualityChanged = true
 		end
 	end
@@ -716,6 +727,9 @@ function TT:GameTooltip_OnTooltipSetItem(tt)
 	if itemID or bagCount or bankCount then tt:AddLine(' ') end
 	if itemID or bagCount then tt:AddDoubleLine(itemID or ' ', bagCount or ' ') end
 	if bankCount then tt:AddDoubleLine(' ', bankCount) end
+end
+function TT:GameTooltip_OnTooltipSetItem(tt, ttData)  -- For Retail and lower -> the method call with ':' doesn't in WoW10 with this new tooltip stuff
+	OnTooltipSetItem(tt, ttData)
 end
 
 function TT:GameTooltip_AddQuestRewardsToTooltip(tt, questID)
@@ -814,10 +828,15 @@ function TT:SetUnitAura(tt, unit, index, filter)
 	tt:Show()
 end
 
-function TT:GameTooltip_OnTooltipSetSpell(tt)
-	if tt:IsForbidden() or not TT:IsModKeyDown() then return end
-
-	local _, id = tt:GetSpell()
+local function OnTooltipSetSpell(tt, ttData) -- For WoW10 and the new tooltip stuff
+	if not E.WoW10 and tt.IsForbidden and tt:IsForbidden() or not TT:IsModKeyDown() then return end
+	
+	local _, id
+	if E.WoW10 then
+		_, id = _G.TooltipUtil.GetDisplayedSpell(tt)
+	else
+		_, id = tt:GetSpell()
+	end
 	if not id then return end
 
 	local ID = format(IDLine, _G.ID, id)
@@ -831,6 +850,9 @@ function TT:GameTooltip_OnTooltipSetSpell(tt)
 
 	tt:AddLine(ID)
 	tt:Show()
+end
+function TT:GameTooltip_OnTooltipSetSpell(tt, ttData) -- For Retail and lower -> the method call with ':' doesn't in WoW10 with this new tooltip stuff
+	OnTooltipSetSpell(tt, ttData)
 end
 
 function TT:SetItemRef(link)
@@ -960,6 +982,7 @@ function TT:Initialize()
 	GameTooltip.StatusBar.text:Point('CENTER', GameTooltip.StatusBar, 0, 0)
 	GameTooltip.StatusBar.text:FontTemplate(LSM:Fetch('font', TT.db.healthBar.font), TT.db.healthBar.fontSize, TT.db.healthBar.fontOutline)
 
+	
 	--Tooltip Fonts
 	if not GameTooltip.hasMoney then
 		--Force creation of the money lines, so we can set font for it
@@ -983,16 +1006,29 @@ function TT:Initialize()
 	TT:SecureHook('EmbeddedItemTooltip_SetSpellByQuestReward', 'EmbeddedItemTooltip_QuestReward')
 	TT:SecureHook(GameTooltip, 'SetUnitAura')
 	TT:SecureHook(GameTooltip, 'SetUnitBuff', 'SetUnitAura')
-	TT:SecureHook(GameTooltip, 'SetUnitDebuff', 'SetUnitAura')
-	TT:SecureHookScript(GameTooltip, 'OnTooltipSetSpell', 'GameTooltip_OnTooltipSetSpell')
-	TT:SecureHookScript(GameTooltip, 'OnTooltipCleared', 'GameTooltip_OnTooltipCleared')
-	TT:SecureHookScript(GameTooltip, 'OnTooltipSetItem', 'GameTooltip_OnTooltipSetItem')
-	TT:SecureHookScript(GameTooltip, 'OnTooltipSetUnit', 'GameTooltip_OnTooltipSetUnit')
-	TT:SecureHookScript(GameTooltip.StatusBar, 'OnValueChanged', 'GameTooltipStatusBar_OnValueChanged')
-	TT:SecureHookScript(_G.ElvUISpellBookTooltip, 'OnTooltipSetSpell', 'GameTooltip_OnTooltipSetSpell')
-	TT:RegisterEvent('MODIFIER_STATE_CHANGED')
+	TT:SecureHook(GameTooltip, 'SetUnitDebuff', 'SetUnitAura')	
 
-	if E.Retail then
+	if E.WoW10 then
+	--[[
+		OnTooltipSetSpell,OnTooltipSetItem and OnTooltipSetUnit seems to be removed in 100002
+		TooltipDataProcessor.AddTooltipPostCall is the new way to modify tooltips according to:
+		https://wowpedia.fandom.com/wiki/Patch_10.0.2/API_changes#Tooltip_Changes
+	]]
+		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Spell, OnTooltipSetSpell)
+		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, OnTooltipSetItem)
+		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, OnTooltipSetUnit)		
+	else
+		TT:SecureHookScript(GameTooltip, 'OnTooltipSetSpell', 'GameTooltip_OnTooltipSetSpell')
+		TT:SecureHookScript(GameTooltip, 'OnTooltipSetItem', 'GameTooltip_OnTooltipSetItem')
+		TT:SecureHookScript(GameTooltip, 'OnTooltipSetUnit', 'GameTooltip_OnTooltipSetUnit')
+	end
+
+	TT:SecureHookScript(GameTooltip, 'OnTooltipCleared', 'GameTooltip_OnTooltipCleared')
+	TT:SecureHookScript(GameTooltip.StatusBar, 'OnValueChanged', 'GameTooltipStatusBar_OnValueChanged')
+	TT:SecureHookScript(_G.ElvUISpellBookTooltip, 'OnShow', 'GameTooltip_OnTooltipSetSpell') -- don't know how to change this properly yet, OnTooltipSetSpell caused an error in WoW10 - hooked OnShow instead for the moment
+	TT:RegisterEvent('MODIFIER_STATE_CHANGED')	
+	
+	if E.Retail and not E.WoW10 then
 		TT:SecureHook('EmbeddedItemTooltip_SetSpellWithTextureByID', 'EmbeddedItemTooltip_ID')
 		TT:SecureHook(GameTooltip, 'SetToyByItemID')
 		TT:SecureHook(GameTooltip, 'SetCurrencyToken')
