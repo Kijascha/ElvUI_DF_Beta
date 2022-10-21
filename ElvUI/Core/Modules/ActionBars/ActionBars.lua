@@ -7,7 +7,7 @@ local format, gsub, strsplit, strfind, strupper, tremove = format, gsub, strspli
 
 local ClearOnBarHighlightMarks = ClearOnBarHighlightMarks
 local ClearOverrideBindings = ClearOverrideBindings
-local ClearPetActionHighlightMarks = E.Retail and PetActionBar.ClearPetActionHighlightMarks or ClearPetActionHighlightMarks
+local ClearPetActionHighlightMarks = ClearPetActionHighlightMarks or PetActionBar.ClearPetActionHighlightMarks
 local CreateFrame = CreateFrame
 local GetCVarBool = GetCVarBool
 local GetBindingKey = GetBindingKey
@@ -910,6 +910,33 @@ function AB:SetNoopsi(frame)
 	end
 end
 
+do
+	local function FixButton(button)
+		button:SetScript('OnEnter', AB.SpellButtonOnEnter)
+		button:SetScript('OnLeave', AB.SpellButtonOnLeave)
+
+		button.OnEnter = AB.SpellButtonOnEnter
+		button.OnLeave = AB.SpellButtonOnLeave
+	end
+
+	function AB:FixSpellBookTaint() -- let spell book buttons work without tainting by replacing this function
+		for i = 1, SPELLS_PER_PAGE do
+			FixButton(_G['SpellButton'..i])
+		end
+
+		if E.Retail then -- same deal with profession buttons, this will fix the tainting
+			for _, frame in pairs({ _G.SpellBookProfessionFrame:GetChildren() }) do
+				for i = 1, 2 do
+					local button = E.WoW10 and frame['SpellButton'..i] or frame['button'..i]
+					if button then
+						FixButton(button)
+					end
+				end
+			end
+		end
+	end
+end
+
 local SpellBookTooltip = CreateFrame('GameTooltip', 'ElvUISpellBookTooltip', E.UIParent, 'GameTooltipTemplate')
 function AB:SpellBookTooltipOnUpdate(elapsed)
 	self.elapsed = (self.elapsed or 0) + elapsed
@@ -940,12 +967,7 @@ function AB:SpellButtonOnEnter(_, tt)
 	local needsUpdate = tt:SetSpellBookItem(slot, _G.SpellBookFrame.bookType)
 
 	ClearOnBarHighlightMarks()
-
-	if ClearPetActionHighlightMarks then
-		ClearPetActionHighlightMarks()
-	else
-		_G.PetActionBar:ClearPetActionHighlightMarks()
-	end
+	ClearPetActionHighlightMarks()
 
 	local slotType, actionID = GetSpellBookItemInfo(slot, _G.SpellBookFrame.bookType)
 	if slotType == 'SPELL' then
@@ -983,7 +1005,7 @@ end
 
 function AB:SpellButtonOnLeave()
 	ClearOnBarHighlightMarks()
-	ClearPetActionHighlightMarks() -- ToDO: WoW10
+	ClearPetActionHighlightMarks()
 
 	SpellBookTooltip:Hide()
 	SpellBookTooltip:SetScript('OnUpdate', nil)
@@ -1052,28 +1074,7 @@ function AB:DisableBlizzard()
 		end
 	end
 
-	-- let spell book buttons work without tainting by replacing this function
-	for i = 1, SPELLS_PER_PAGE do
-		local button = _G['SpellButton'..i]
-		button:SetScript('OnEnter', AB.SpellButtonOnEnter)
-		button:SetScript('OnLeave', AB.SpellButtonOnLeave)
-
-		button.OnEnter = AB.SpellButtonOnEnter
-		button.OnLeave = AB.SpellButtonOnLeave
-	end
-
-	if E.Retail and not E.WoW10 then -- same deal with profession buttons, this will fix the tainting
-		for _, frame in pairs({ _G.SpellBookProfessionFrame:GetChildren() }) do
-			for i = 1, 2 do
-				local button = frame['button'..i]
-				button:SetScript('OnEnter', AB.SpellButtonOnEnter)
-				button:SetScript('OnLeave', AB.SpellButtonOnLeave)
-
-				button.OnEnter = AB.SpellButtonOnEnter
-				button.OnLeave = AB.SpellButtonOnLeave
-			end
-		end
-	end
+	AB:FixSpellBookTaint()
 
 	-- MainMenuBar:ClearAllPoints taint during combat
 	_G.MainMenuBar.SetPositionForStatusBars = E.noop

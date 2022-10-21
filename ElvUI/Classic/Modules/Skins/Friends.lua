@@ -34,7 +34,7 @@ local function SkinPlusMinus(button, minus)
 	button:SetPushedTexture(texture)
 	button.SetPushedTexture = E.noop
 
-	button:SetHighlightTexture()
+	button:SetHighlightTexture(0)
 	button.SetHighlightTexture = E.noop
 
 	button:SetDisabledTexture(texture)

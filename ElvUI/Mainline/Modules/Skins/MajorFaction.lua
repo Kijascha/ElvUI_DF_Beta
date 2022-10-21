@@ -4,22 +4,23 @@ local S = E:GetModule('Skins')
 local _G = _G
 local hooksecurefunc = hooksecurefunc
 
---ToDo: WoW10
+local function SetupMajorFaction(frame)
+	if frame.Divider then frame.Divider:Hide() end
+	if frame.NineSlice then frame.NineSlice:Hide() end
+	if frame.Background then frame.Background:Hide() end
+	if frame.BackgroundShadow then frame.BackgroundShadow:Hide() end
+	if frame.CloseButton.Border then frame.CloseButton.Border:Hide() end
+end
+
 function S:Blizzard_MajorFactions()
 	if not (E.private.skins.blizzard.enable and E.private.skins.blizzard.majorFactions) then return end
 
-	local MajorFactionRenownFrame = _G.MajorFactionRenownFrame
-	MajorFactionRenownFrame:SetTemplate('Transparent')
-	S:HandleCloseButton(MajorFactionRenownFrame.CloseButton)
+	local RenownFrame = _G.MajorFactionRenownFrame
+	RenownFrame:SetTemplate('Transparent')
+	S:HandleCloseButton(RenownFrame.CloseButton)
 
 	if E.private.skins.parchmentRemoverEnable then
-		hooksecurefunc(MajorFactionRenownFrame, 'SetUpMajorFactionData', function(self)
-			self.NineSlice:Hide()
-			self.Background:Hide()
-			self.BackgroundShadow:Hide()
-			self.Divider:Hide()
-			self.CloseButton.Border:Hide()
-		end)
+		hooksecurefunc(RenownFrame, 'SetUpMajorFactionData', SetupMajorFaction)
 	end
 end
 

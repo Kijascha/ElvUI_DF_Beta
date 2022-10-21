@@ -432,7 +432,7 @@ function S:LookingForGroupFrames()
 			_G.LFRBrowseFrame:StripTextures()
 
 			for _, roleButton in pairs(RoleButtons2) do
-				roleButton:SetNormalTexture()
+				roleButton:SetNormalTexture(0)
 				S:HandleCheckBox(roleButton.checkButton, nil, true)
 				roleButton:GetChildren():SetFrameLevel(roleButton:GetChildren():GetFrameLevel() + 1)
 			end

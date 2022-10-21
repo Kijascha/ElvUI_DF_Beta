@@ -383,8 +383,8 @@ function S:Blizzard_Communities()
 
 	--[[for _, button in pairs(CommunitiesFrame.GuildBenefitsFrame.Rewards.RewardsContainer.buttons) do
 		button:SetTemplate('Transparent')
-		button:SetNormalTexture()
-		button:SetHighlightTexture()
+		button:SetNormalTexture(0)
+		button:SetHighlightTexture(0)
 
 		if not button.hover then
 			local hover = button:CreateTexture()

@@ -140,7 +140,7 @@ function S:SpellBookFrame()
 		end
 
 		if E.private.skins.parchmentRemoverEnable then
-			button:SetHighlightTexture()
+			button:SetHighlightTexture(0)
 		end
 
 		highlight:SetAllPoints(icon)
