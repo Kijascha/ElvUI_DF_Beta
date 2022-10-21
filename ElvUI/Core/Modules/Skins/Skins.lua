@@ -1261,94 +1261,102 @@ local function UpdateFollowerQuality(self, followerInfo)
 	end
 end
 
-function S:HandleFollowerListOnUpdateDataFunc(Buttons, numButtons, offset, numFollowers)
-	if not Buttons or (not numButtons or numButtons == 0) or not offset or not numFollowers then return end
+do
+	S.FollowerListUpdateDataFrames = {}
 
-	for i = 1, numButtons do
-		local button = Buttons[i]
-		if button then
-			local index = offset + i -- adjust index
-			if index <= numFollowers then
-				button:SetTemplate(button.mode == 'CATEGORY' and 'NoBackdrop' or 'Transparent')
+	local function UpdateFollower(button)
+		if not E.WoW10 then
+			button:SetTemplate(button.mode == 'CATEGORY' and 'NoBackdrop' or 'Transparent')
+		end
 
-				if button.Category then
-					button.Category:ClearAllPoints()
-					button.Category:Point('TOP', button, 'TOP', 0, -4)
-				end
+		local category = button.Category
+		if category then
+			category:ClearAllPoints()
+			category:Point('TOP', button, 'TOP', 0, -4)
+		end
 
-				local fl = button.Follower
-				if fl then
-					if not fl.template then
-						fl:SetTemplate('Transparent')
-						fl.Name:SetWordWrap(false)
-						fl.Selection:SetTexture()
-						fl.AbilitiesBG:SetTexture()
-						fl.BusyFrame:SetAllPoints()
-						fl.BG:Hide()
+		local follower = button.Follower
+		if follower then
+			if not follower.template then
+				follower:SetTemplate('Transparent')
+				follower.Name:SetWordWrap(false)
+				follower.Selection:SetTexture()
+				follower.AbilitiesBG:SetTexture()
+				follower.BusyFrame:SetAllPoints()
+				follower.BG:Hide()
 
-						local hl = fl:GetHighlightTexture()
-						hl:SetColorTexture(0.9, 0.9, 0.9, 0.25)
-						hl:SetInside()
-					end
+				local hl = follower:GetHighlightTexture()
+				hl:SetColorTexture(0.9, 0.9, 0.9, 0.25)
+				hl:SetInside()
+			end
 
-					if fl.Counters then
-						for y = 1, #fl.Counters do
-							local counter = fl.Counters[y]
-							if counter and not counter.template then
-								counter:SetTemplate()
+			local counters = follower.Counters
+			if counters then
+				for _, counter in next, counters do
+					if not counter.template then
+						counter:SetTemplate()
 
-								if counter.Border then
-									counter.Border:SetTexture()
-								end
-
-								if counter.Icon then
-									counter.Icon:SetTexCoord(unpack(E.TexCoords))
-									counter.Icon:SetInside()
-								end
-							end
-						end
-					end
-
-					if fl.PortraitFrame then
-						if not fl.PortraitFrameStyled then
-							S:HandleGarrisonPortrait(fl.PortraitFrame)
-							fl.PortraitFrame:ClearAllPoints()
-							fl.PortraitFrame:Point('TOPLEFT', 3, -3)
-							hooksecurefunc(fl.PortraitFrame, 'SetupPortrait', UpdateFollowerQuality)
-							fl.PortraitFrameStyled = true
+						if counter.Border then
+							counter.Border:SetTexture()
 						end
 
-						if fl.PortraitFrame.quality then
-							local color = ITEM_QUALITY_COLORS[fl.PortraitFrame.quality]
-							if color and fl.PortraitFrame.backdrop then
-								fl.PortraitFrame.backdrop:SetBackdropBorderColor(color.r, color.g, color.b)
-							end
-						end
-					end
-
-					if fl.Selection then
-						if fl.Selection:IsShown() then
-							fl:SetBackdropColor(0.9, 0.8, 0.1, 0.25)
-						else
-							fl:SetBackdropColor(0, 0, 0, 0.5)
+						if counter.Icon then
+							counter.Icon:SetTexCoord(unpack(E.TexCoords))
+							counter.Icon:SetInside()
 						end
 					end
 				end
 			end
+
+			local portrait = follower.PortraitFrame
+			if portrait then
+				S:HandleGarrisonPortrait(portrait, true)
+
+				portrait:ClearAllPoints()
+				portrait:Point('TOPLEFT', 3, -3)
+
+				if not follower.PortraitFrameStyled then
+					hooksecurefunc(portrait, 'SetupPortrait', UpdateFollowerQuality)
+					follower.PortraitFrameStyled = true
+				end
+
+				local quality = portrait.quality or (follower.info and follower.info.quality)
+				local color = portrait.backdrop and ITEM_QUALITY_COLORS[quality]
+				if color then -- sometimes it doesn't have this data since WoW10
+					portrait.backdrop:SetBackdropBorderColor(color.r, color.g, color.b)
+				end
+			end
+
+			if follower.Selection then
+				if follower.Selection:IsShown() then
+					follower:SetBackdropColor(0.9, 0.8, 0.1, 0.25)
+				else
+					follower:SetBackdropColor(0, 0, 0, 0.5)
+				end
+			end
 		end
 	end
-end
 
-do
-	S.FollowerListUpdateDataFrames = {}
-	local function UpdateData(dataFrame)
-		if not (dataFrame and dataFrame.listScroll and S.FollowerListUpdateDataFrames[dataFrame:GetName()]) then return end
+	function S:HandleFollowerListOnUpdateDataFunc(buttons, numButtons, offset, numFollowers)
+		if not buttons or (not numButtons or numButtons == 0) or not offset or not numFollowers then return end
 
-		local list = dataFrame.followersList
+		for i = 1, numButtons do
+			local button = buttons[i]
+			if button then
+				local index = offset + i -- adjust index
+				if index <= numFollowers then
+					UpdateFollower(button)
+				end
+			end
+		end
+	end
+
+	local function UpdateListScroll(dataFrame)
+		if not (dataFrame and dataFrame.listScroll) or not S.FollowerListUpdateDataFrames[dataFrame:GetName()] then return end
+
 		local buttons = dataFrame.listScroll.buttons
 		local offset = _G.HybridScrollFrame_GetOffset(dataFrame.listScroll)
-
-		S:HandleFollowerListOnUpdateDataFunc(buttons, buttons and #buttons, offset, list and #list)
+		S:HandleFollowerListOnUpdateDataFunc(buttons, buttons and #buttons, offset, dataFrame.listScroll and #dataFrame.listScroll)
 	end
 
 	function S:HandleFollowerListOnUpdateData(frame)
@@ -1359,7 +1367,11 @@ do
 		if S.FollowerListUpdateDataFrames[frame] then return end -- make sure we don't double hook `GarrisonLandingPageFollowerList`
 		S.FollowerListUpdateDataFrames[frame] = true
 
-		hooksecurefunc(_G[frame], 'UpdateData', UpdateData)
+		if _G.GarrisonFollowerList_InitButton then
+			hooksecurefunc(_G, 'GarrisonFollowerList_InitButton', UpdateFollower)
+		else
+			hooksecurefunc(_G[frame], 'UpdateData', UpdateListScroll) -- pre WoW10
+		end
 	end
 end
 
@@ -1378,8 +1390,13 @@ local function HandleFollowerRole(roleIcon, atlas)
 	end
 end
 
-function S:HandleGarrisonPortrait(portrait)
-	if not portrait.Portrait then return end
+function S:HandleGarrisonPortrait(portrait, updateAtlas)
+	local main = portrait.Portrait
+	if not main then return end
+
+	if not main.backdrop then
+		main:CreateBackdrop('Transparent')
+	end
 
 	local level = portrait.Level or portrait.LevelText
 	if level then
@@ -1391,18 +1408,16 @@ function S:HandleGarrisonPortrait(portrait)
 		if portrait.LevelBorder then portrait.LevelBorder:SetScale(.0001) end
 	end
 
-	portrait.Portrait:CreateBackdrop('Transparent')
-
 	if portrait.PortraitRing then
 		portrait.PortraitRing:Hide()
 		portrait.PortraitRingQuality:SetTexture('')
 		portrait.PortraitRingCover:SetColorTexture(0, 0, 0)
-		portrait.PortraitRingCover:SetAllPoints(portrait.Portrait.backdrop)
+		portrait.PortraitRingCover:SetAllPoints(main.backdrop)
 	end
 
 	if portrait.Empty then
 		portrait.Empty:SetColorTexture(0, 0, 0)
-		portrait.Empty:SetAllPoints(portrait.Portrait)
+		portrait.Empty:SetAllPoints(main)
 	end
 
 	if portrait.Highlight then portrait.Highlight:Hide() end
@@ -1415,13 +1430,18 @@ function S:HandleGarrisonPortrait(portrait)
 
 		local roleIcon = portrait.HealthBar.RoleIcon
 		roleIcon:ClearAllPoints()
-		roleIcon:Point('CENTER', portrait.Portrait.backdrop, 'TOPRIGHT')
-		hooksecurefunc(roleIcon, 'SetAtlas', HandleFollowerRole)
+		roleIcon:Point('CENTER', main.backdrop, 'TOPRIGHT')
+
+		if updateAtlas then
+			HandleFollowerRole(roleIcon, roleIcon:GetAtlas())
+		else
+			hooksecurefunc(roleIcon, 'SetAtlas', HandleFollowerRole)
+		end
 
 		local background = portrait.HealthBar.Background
 		background:SetAlpha(0)
-		background:SetInside(portrait.Portrait.backdrop, 2, 1) -- unsnap it
-		background:Point('TOPLEFT', portrait.Portrait.backdrop, 'BOTTOMLEFT', 2, 7)
+		background:SetInside(main.backdrop, 2, 1) -- unsnap it
+		background:Point('TOPLEFT', main.backdrop, 'BOTTOMLEFT', 2, 7)
 		portrait.HealthBar.Health:SetTexture(E.media.normTex)
 	end
 end

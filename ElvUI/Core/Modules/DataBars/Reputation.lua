@@ -19,8 +19,6 @@ local REPUTATION = REPUTATION
 local STANDING = STANDING
 local UNKNOWN = UNKNOWN
 
-local BLUE_COLOR_HEX = E:RGBToHex(BLUE_FONT_COLOR.r, BLUE_FONT_COLOR.g, BLUE_FONT_COLOR.b)
-
 local function GetValues(curValue, minValue, maxValue)
 	local maximum = maxValue - minValue
 	local current, diff = curValue - minValue, maximum
@@ -62,15 +60,22 @@ function DB:ReputationBar_Update()
 		local isMajorFaction = factionID and C_Reputation_IsMajorFaction(factionID)
 		local repInfo = factionID and GetFriendshipReputation(factionID)
 
+
 		if repInfo and repInfo.friendshipFactionID > 0 then
 			label, minValue, maxValue, curValue = repInfo.reaction, repInfo.reactionThreshold or 0, repInfo.nextThreshold or 1, repInfo.standing or 1
 		elseif isMajorFaction then
 			local majorFactionData = C_MajorFactions_GetMajorFactionData(factionID)
+			local renownColor = DB.db.colors.factionColors[10]
+			local renownHex = E:RGBToHex(renownColor.r, renownColor.g, renownColor.b)
 
-			minValue, maxValue = 0, majorFactionData.renownLevelThreshold
+			reaction, minValue, maxValue = 10, 0, majorFactionData.renownLevelThreshold
 			curValue = C_MajorFactions_HasMaximumRenown(factionID) and majorFactionData.renownLevelThreshold or majorFactionData.renownReputationEarned or 0
+<<<<<<< HEAD
 			label = format('%s%s|r %s', BLUE_COLOR_HEX, RENOWN_LEVEL_LABEL, majorFactionData.renownLevel)
 			renownColor = BLUE_FONT_COLOR
+=======
+			label = format('%s%s|r %s', renownHex, RENOWN_LEVEL_LABEL, majorFactionData.renownLevel)
+>>>>>>> ce10180d7bc31eabfacd9f51fcd7e91e2d34baa2
 		end
 	elseif C_Reputation_IsFactionParagon(factionID) then
 		local current, threshold
@@ -88,7 +93,8 @@ function DB:ReputationBar_Update()
 	end
 
 	local customColors = DB.db.colors.useCustomFactionColors
-	local color = (customColors or reaction == 9) and DB.db.colors.factionColors[reaction] or _G.FACTION_BAR_COLORS[reaction] -- reaction 9 is Paragon
+	local customReaction = reaction == 9 or reaction == 10 -- 9 is paragon, 10 is renown
+	local color = (customColors or customReaction) and DB.db.colors.factionColors[reaction] or _G.FACTION_BAR_COLORS[reaction]
 	local alpha = not customColors and DB.db.colors.reputationAlpha
 	
 	if E.WoW10 and renownColor then -- change to renown color when renown faction is being tracked
