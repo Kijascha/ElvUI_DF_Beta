@@ -677,12 +677,7 @@ local function OnTooltipSetItem(tt, ttData) -- For WoW10 and the new tooltip stu
 		end
 	end
 
-	local name, link
-	if E.WoW10 then 
-		name, link = _G.TooltipUtil.GetDisplayedItem(tt)
-	else
-		name, link = tt:GetItem()
-	end	
+	local name, link = tt:GetItem()
 
 	if not E.Retail and name == '' and _G.CraftFrame and _G.CraftFrame:IsShown() then
 		local reagentIndex = ownerName and tonumber(strmatch(ownerName, 'Reagent(%d+)'))
@@ -831,12 +826,7 @@ end
 local function OnTooltipSetSpell(tt, ttData) -- For WoW10 and the new tooltip stuff
 	if not E.WoW10 and tt.IsForbidden and tt:IsForbidden() or not TT:IsModKeyDown() then return end
 	
-	local _, id
-	if E.WoW10 then
-		_, id = _G.TooltipUtil.GetDisplayedSpell(tt)
-	else
-		_, id = tt:GetSpell()
-	end
+	local _, id = tt:GetSpell()
 	if not id then return end
 
 	local ID = format(IDLine, _G.ID, id)
