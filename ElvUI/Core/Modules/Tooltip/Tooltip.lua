@@ -665,7 +665,7 @@ function TT:EmbeddedItemTooltip_QuestReward(tt)
 	end
 end
 
-local function OnTooltipSetItem(tt, ttData) -- For WoW10 and the new tooltip stuff
+local function OnTooltipSetItem(tt) -- For WoW10 and the new tooltip stuff
 	if not E.WoW10 and tt:IsForbidden() or not TT.db.visibility then return end
 
 	if not E.Wow10 then
@@ -676,9 +676,13 @@ local function OnTooltipSetItem(tt, ttData) -- For WoW10 and the new tooltip stu
 			return
 		end
 	end
-
-	local name, link = tt:GetItem()
-
+	
+	local name, link
+	if not tt.GetItem then
+		name, link = TooltipUtil.GetDisplayedItem(tt) -- this works when tt.GetItem is nil
+	else
+		name, link = tt:GetItem() -- On some of the new wearable items GetItem is nil and is causing an error
+	end
 	if not E.Retail and name == '' and _G.CraftFrame and _G.CraftFrame:IsShown() then
 		local reagentIndex = ownerName and tonumber(strmatch(ownerName, 'Reagent(%d+)'))
 		if reagentIndex then link = GetCraftReagentItemLink(GetCraftSelectionIndex(), reagentIndex) end
@@ -723,8 +727,8 @@ local function OnTooltipSetItem(tt, ttData) -- For WoW10 and the new tooltip stu
 	if itemID or bagCount then tt:AddDoubleLine(itemID or ' ', bagCount or ' ') end
 	if bankCount then tt:AddDoubleLine(' ', bankCount) end
 end
-function TT:GameTooltip_OnTooltipSetItem(tt, ttData)  -- For Retail and lower -> the method call with ':' doesn't in WoW10 with this new tooltip stuff
-	OnTooltipSetItem(tt, ttData)
+function TT:GameTooltip_OnTooltipSetItem(tt)  -- the method call with ':' doesn't in WoW10 with this new tooltip stuff
+	OnTooltipSetItem(tt)
 end
 
 function TT:GameTooltip_AddQuestRewardsToTooltip(tt, questID)
@@ -823,7 +827,7 @@ function TT:SetUnitAura(tt, unit, index, filter)
 	tt:Show()
 end
 
-local function OnTooltipSetSpell(tt, ttData) -- For WoW10 and the new tooltip stuff
+local function OnTooltipSetSpell(tt) -- For WoW10 and the new tooltip stuff
 	if not E.WoW10 and tt.IsForbidden and tt:IsForbidden() or not TT:IsModKeyDown() then return end
 	
 	local _, id = tt:GetSpell()
@@ -841,8 +845,8 @@ local function OnTooltipSetSpell(tt, ttData) -- For WoW10 and the new tooltip st
 	tt:AddLine(ID)
 	tt:Show()
 end
-function TT:GameTooltip_OnTooltipSetSpell(tt, ttData) -- For Retail and lower -> the method call with ':' doesn't in WoW10 with this new tooltip stuff
-	OnTooltipSetSpell(tt, ttData)
+function TT:GameTooltip_OnTooltipSetSpell(tt) -- the method call with ':' doesn't in WoW10 with this new tooltip stuff
+	OnTooltipSetSpell(tt)
 end
 
 function TT:SetItemRef(link)
