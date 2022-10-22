@@ -341,6 +341,7 @@ P.bags = {
 			equipment = { r = 0, g = .50, b = .47 },
 			consumables = { r = .57, g = .95, b = .66 },
 			tradegoods = { r = 1, g = .32, b = .66 },
+			junk = { r = .99, g = .23, b = .21 },
 		},
 		items = {
 			questStarter = { r = 1, g = .96, b = .41 },
@@ -2630,6 +2631,12 @@ for i = 1, 10 do
 	end
 
 	P.actionbar['bar'..i] = bar
+end
+
+if E.WoW10 then
+	P.actionbar['bar13'] = CopyTable(P.actionbar.bar1)
+	P.actionbar['bar14'] = CopyTable(P.actionbar.bar1)
+	P.actionbar['bar15'] = CopyTable(P.actionbar.bar1)
 end
 
 for _, bar in next, {'barPet', 'stanceBar', 'vehicleExitButton', 'extraActionButton', 'zoneActionButton'} do

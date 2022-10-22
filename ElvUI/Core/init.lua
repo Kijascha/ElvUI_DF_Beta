@@ -257,6 +257,8 @@ function E:OnInitialize()
 	end
 
 	E.ScanTooltip = CreateFrame('GameTooltip', 'ElvUI_ScanTooltip', _G.UIParent, 'GameTooltipTemplate')
+	E.EasyMenu = CreateFrame('Frame', 'ElvUI_EasyMenu', _G.UIParent, 'UIDropDownMenuTemplate')
+
 	E.PixelMode = E.twoPixelsPlease or E.private.general.pixelPerfect -- keep this over `UIScale`
 	E.Border = (E.PixelMode and not E.twoPixelsPlease) and 1 or 2
 	E.Spacing = E.PixelMode and 0 or 1
@@ -277,6 +279,17 @@ function E:OnInitialize()
 	if GetAddOnEnableState(E.myname, 'Tukui') == 2 then
 		E:StaticPopup_Show('TUKUI_ELVUI_INCOMPATIBLE')
 	end
+end
+
+function E:SetEasyMenuAnchor(menu, frame)
+	local point = E:GetScreenQuadrant(frame)
+	local bottom = point and strfind(point, 'BOTTOM')
+	local left = point and strfind(point, 'LEFT')
+
+	local anchor1 = (bottom and left and 'BOTTOMLEFT') or (bottom and 'BOTTOMRIGHT') or (left and 'TOPLEFT') or 'TOPRIGHT'
+	local anchor2 = (bottom and left and 'TOPLEFT') or (bottom and 'TOPRIGHT') or (left and 'BOTTOMLEFT') or 'BOTTOMRIGHT'
+
+	UIDropDownMenu_SetAnchor(menu, 0, 0, anchor1, frame, anchor2)
 end
 
 function E:ResetProfile()

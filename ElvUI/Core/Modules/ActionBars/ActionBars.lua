@@ -104,35 +104,26 @@ AB.barDefaults = {
 		bindButtons = 'ELVUIBAR10BUTTON',
 		position = 'BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-4,400',
 	},
-	--[[barX = {
-		page = 11,
-		bindButtons = 'MULTIACTIONBAR5BUTTON',
-		position = 'BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-4,400',
-	},barX = {
-		page = 12,
-		bindButtons = 'MULTIACTIONBAR5BUTTON',
-		position = 'BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-4,400',
-	},
-	barX = {
+	bar13 = {
 		page = 13,
 		bindButtons = 'MULTIACTIONBAR5BUTTON',
 		position = 'BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-4,400',
 	},
-	barX = {
+	bar14 = {
 		page = 14,
 		bindButtons = 'MULTIACTIONBAR6BUTTON',
 		position = 'BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-4,400',
 	},
-	barX = {
+	bar15 = {
 		page = 15,
 		bindButtons = 'MULTIACTIONBAR7BUTTON',
 		position = 'BOTTOMRIGHT,ElvUIParent,BOTTOMRIGHT,-4,400',
-	}]]
+	}
 }
 
 do
 	local fullConditions = (E.Retail or E.Wrath) and format('[overridebar] %d; [vehicleui][possessbar] %d;', GetOverrideBarIndex(), GetVehicleBarIndex()) or ''
-	AB.barDefaults.bar1.conditions = fullConditions..'[bonusbar:5] 11; [shapeshift] 13; [bar:2] 2; [bar:3] 3; [bar:4] 4; [bar:5] 5; [bar:6] 6;'
+	AB.barDefaults.bar1.conditions = fullConditions..format('[bonusbar:5] 11; [shapeshift] %d; [bar:2] 2; [bar:3] 3; [bar:4] 4; [bar:5] 5; [bar:6] 6;', GetTempShapeshiftBarIndex())
 end
 
 AB.customExitButton = {
@@ -817,14 +808,14 @@ function AB:Bar_OnEnter(bar)
 	end
 
 	if bar.mouseover then
-		E:UIFrameFadeIn(bar, 0.2, bar:GetAlpha(), bar.db.alpha)
+		E:UIFrameFadeIn(bar, 0.2, bar:GetAlpha(), bar.db.alpha or 1)
 		AB:FadeBarBlings(bar, bar.db.alpha)
 	end
 end
 
 function AB:Bar_OnLeave(bar)
 	if bar:GetParent() == AB.fadeParent and not AB.fadeParent.mouseLock then
-		local a = 1 - AB.db.globalFadeAlpha
+		local a = 1 - (AB.db.globalFadeAlpha or 0)
 		E:UIFrameFadeOut(AB.fadeParent, 0.2, AB.fadeParent:GetAlpha(), a)
 		AB:FadeBlings(a)
 	end
@@ -843,7 +834,7 @@ function AB:Button_OnEnter(button)
 	end
 
 	if bar.mouseover then
-		E:UIFrameFadeIn(bar, 0.2, bar:GetAlpha(), bar.db.alpha)
+		E:UIFrameFadeIn(bar, 0.2, bar:GetAlpha(), bar.db.alpha or 1)
 		AB:FadeBarBlings(bar, bar.db.alpha)
 	end
 end
@@ -851,7 +842,7 @@ end
 function AB:Button_OnLeave(button)
 	local bar = button:GetParent()
 	if bar:GetParent() == AB.fadeParent and not AB.fadeParent.mouseLock then
-		local a = 1 - AB.db.globalFadeAlpha
+		local a = 1 - (AB.db.globalFadeAlpha or 0)
 		E:UIFrameFadeOut(AB.fadeParent, 0.2, AB.fadeParent:GetAlpha(), a)
 		AB:FadeBlings(a)
 	end
@@ -882,7 +873,7 @@ function AB:FadeParent_OnEvent()
 		AB:FadeBlings(1)
 	else
 		self.mouseLock = false
-		local a = 1 - AB.db.globalFadeAlpha
+		local a = 1 - (AB.db.globalFadeAlpha or 0)
 		E:UIFrameFadeOut(self, 0.2, self:GetAlpha(), a)
 		AB:FadeBlings(a)
 	end
@@ -1554,7 +1545,7 @@ function AB:Initialize()
 	LAB.RegisterCallback(AB, 'OnCooldownDone', AB.LAB_CooldownDone)
 
 	AB.fadeParent = CreateFrame('Frame', 'Elv_ABFade', _G.UIParent)
-	AB.fadeParent:SetAlpha(1 - AB.db.globalFadeAlpha)
+	AB.fadeParent:SetAlpha(1 - (AB.db.globalFadeAlpha or 0))
 	AB.fadeParent:RegisterEvent('PLAYER_REGEN_DISABLED')
 	AB.fadeParent:RegisterEvent('PLAYER_REGEN_ENABLED')
 	AB.fadeParent:RegisterEvent('PLAYER_TARGET_CHANGED')
@@ -1596,6 +1587,12 @@ function AB:Initialize()
 
 	for i = 1, 10 do
 		AB:CreateBar(i)
+	end
+
+	if E.WoW10 then
+		for i = 13, 15 do
+			AB:CreateBar(i)
+		end
 	end
 
 	AB:CreateBarPet()

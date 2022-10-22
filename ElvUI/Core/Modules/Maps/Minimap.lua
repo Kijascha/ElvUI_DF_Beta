@@ -178,8 +178,8 @@ end
 function M:ADDON_LOADED(_, addon)
 	if addon == 'Blizzard_TimeManager' then
 		_G.TimeManagerClockButton:Kill()
-	elseif addon == 'Blizzard_FeedbackUI' then
-		_G.FeedbackUIButton:Kill()
+	elseif addon == 'Blizzard_PTRFeedback' then
+		_G.PTR_IssueReporter:Kill()
 	elseif addon == 'Blizzard_HybridMinimap' then
 		M:SetupHybridMinimap()
 	elseif addon == 'Blizzard_EncounterJournal' then
@@ -395,10 +395,10 @@ function M:UpdateSettings()
 		end
 	end
 
-    local difficulty = E.WoW10 and MinimapCluster.InstanceDifficulty
-    local instance = difficulty and difficulty.Instance or _G.MiniMapInstanceDifficulty
-    local guild = difficulty and difficulty.Guild or _G.GuildInstanceDifficulty
-    local challenge = difficulty and difficulty.ChallengeMode or _G.MiniMapChallengeMode
+	local difficulty = E.WoW10 and MinimapCluster.InstanceDifficulty
+	local instance = difficulty and difficulty.Instance or _G.MiniMapInstanceDifficulty
+	local guild = difficulty and difficulty.Guild or _G.GuildInstanceDifficulty
+	local challenge = difficulty and difficulty.ChallengeMode or _G.MiniMapChallengeMode
 	if not E.db.general.minimap.clusterDisable then
 		if M.ClusterHolder then
 			E:EnableMover(M.ClusterHolder.mover.name)
@@ -675,6 +675,10 @@ function M:Initialize()
 
 		MinimapCluster.BorderTop:StripTextures()
 		MinimapCluster.Tracking.Background:StripTextures()
+	end
+
+	if E.Wrath then
+		tinsert(killFrames, _G.TimeManagerClockButton)
 	end
 
 	for _, frame in next, killFrames do

@@ -76,9 +76,6 @@ local C_QuestLog_GetQuestIDForLogIndex = C_QuestLog.GetQuestIDForLogIndex
 local C_ChallengeMode_GetDungeonScoreRarityColor = C_ChallengeMode and C_ChallengeMode.GetDungeonScoreRarityColor
 local C_CurrencyInfo_GetCurrencyListLink = C_CurrencyInfo.GetCurrencyListLink
 local C_CurrencyInfo_GetBackpackCurrencyInfo = C_CurrencyInfo.GetBackpackCurrencyInfo
-local C_MountJournal_GetMountIDs = C_MountJournal and C_MountJournal.GetMountIDs
-local C_MountJournal_GetMountInfoByID = C_MountJournal and C_MountJournal.GetMountInfoByID
-local C_MountJournal_GetMountInfoExtraByID = C_MountJournal and C_MountJournal.GetMountInfoExtraByID
 local C_PetJournal_GetPetTeamAverageLevel = C_PetJournal and C_PetJournal.GetPetTeamAverageLevel
 local C_PetBattles_IsInBattle = C_PetBattles and C_PetBattles.IsInBattle
 local C_PlayerInfo_GetPlayerMythicPlusRatingSummary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary
@@ -150,7 +147,7 @@ function TT:GameTooltip_SetDefaultAnchor(tt, parent)
 	local TooltipMover = _G.TooltipMover
 	local _, anchor = tt:GetPoint()
 
-	if anchor == nil or anchor == B.BagFrame or anchor == RightChatPanel or anchor == TooltipMover or anchor == _G.UIParent or anchor == E.UIParent then
+	if anchor == nil or anchor == B.BagFrame or anchor == RightChatPanel or anchor == TooltipMover or anchor == _G.GameTooltipDefaultContainer or anchor == _G.UIParent or anchor == E.UIParent then
 		tt:ClearAllPoints()
 
 		if not E:HasMoverBeenMoved('TooltipMover') then
@@ -426,11 +423,11 @@ function TT:AddMountInfo(tt, unit)
 	local index = 1
 	local name, _, _, _, _, _, _, _, _, spellID = UnitAura(unit, index, 'HELPFUL')
 	while name do
-		local mountID = TT.MountIDs[spellID]
+		local mountID = E.MountIDs[spellID]
 		if mountID then
-			local _, _, sourceText = C_MountJournal_GetMountInfoExtraByID(mountID)
 			tt:AddDoubleLine(format('%s:', _G.MOUNT), name, nil, nil, nil, 1, 1, 1)
 
+			local sourceText = E.MountText[mountID]
 			local mountText = sourceText and IsControlKeyDown() and gsub(sourceText, blanchyFix, '|n')
 			if mountText then
 				local sourceModified = gsub(mountText, '|n', '\10')
@@ -561,7 +558,7 @@ local function OnTooltipSetUnit(tt, ttData) -- For WoW10 and the new tooltip stu
 		end
 
 		if not InCombatLockdown() then
-			if not isShiftKeyDown and (isPlayerUnit and unit ~= 'player') and TT.db.showMount then
+			if not isShiftKeyDown and (isPlayerUnit and unit ~= 'player') and TT.db.showMount and E.Retail then
 				TT:AddMountInfo(tt, unit)
 			end
 
@@ -799,9 +796,9 @@ function TT:SetUnitAura(tt, unit, index, filter)
 	local name, _, _, _, _, _, source, _, _, spellID = UnitAura(unit, index, filter)
 	if not name then return end
 
-	local mountID, mountText = E.Retail and TT.MountIDs[spellID]
+	local mountID, mountText = E.MountIDs[spellID]
 	if mountID then
-		local _, _, sourceText = C_MountJournal_GetMountInfoExtraByID(mountID)
+		local sourceText = E.MountText[mountID]
 		mountText = sourceText and gsub(sourceText, blanchyFix, '|n')
 
 		if mountText then
@@ -956,15 +953,6 @@ end
 
 function TT:Initialize()
 	TT.db = E.db.tooltip
-
-	if E.Retail then
-		TT.MountIDs = {}
-		local mountIDs = C_MountJournal_GetMountIDs()
-		for _, mountID in ipairs(mountIDs) do
-			local _, spellID = C_MountJournal_GetMountInfoByID(mountID)
-			TT.MountIDs[spellID] = mountID
-		end
-	end
 
 	if not E.private.tooltip.enable then return end
 	TT.Initialized = true
