@@ -730,7 +730,7 @@ function S:Blizzard_ChallengesUI()
 
 	hooksecurefunc(KeyStoneFrame, 'OnKeystoneSlotted', HandleAffixIcons)
 
-	hooksecurefunc('ChallengesFrame_Update', function(frame)
+	local challengesFrameUpdate = function(frame)
 		for _, child in ipairs(frame.DungeonIcons) do
 			if not child.template then
 				child:GetRegions():SetAlpha(0)
@@ -741,7 +741,13 @@ function S:Blizzard_ChallengesUI()
 
 			child.Center:SetDrawLayer('BACKGROUND', -1)
 		end
-	end)
+	end
+
+	if not ChallengesFrame_Update then 
+		hooksecurefunc(ChallengesFrame, 'Update', challengesFrameUpdate)
+	else 
+		hooksecurefunc('ChallengesFrame_Update', challengesFrameUpdate)
+	end
 
 	hooksecurefunc(ChallengesFrame.WeeklyInfo, 'SetUp', function(info)
 		if C_MythicPlus_GetCurrentAffixes() then
