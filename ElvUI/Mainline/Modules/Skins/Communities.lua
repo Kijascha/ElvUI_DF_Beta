@@ -383,8 +383,8 @@ function S:Blizzard_Communities()
 
 	--[[for _, button in pairs(CommunitiesFrame.GuildBenefitsFrame.Rewards.RewardsContainer.buttons) do
 		button:SetTemplate('Transparent')
-		button:SetNormalTexture(0)
-		button:SetHighlightTexture(0)
+		button:SetNormalTexture(E.ClearTexture)
+		button:SetHighlightTexture(E.ClearTexture)
 
 		if not button.hover then
 			local hover = button:CreateTexture()
@@ -411,7 +411,8 @@ function S:Blizzard_Communities()
 				if itemID then
 					local _, _, quality = GetItemInfo(itemID)
 					if quality and quality > 1 then
-						button.Icon.backdrop:SetBackdropBorderColor(GetItemQualityColor(quality))
+						local r, g, b = GetItemQualityColor(quality)
+						button.Icon.backdrop:SetBackdropBorderColor(r, g, b)
 					end
 				end
 			end

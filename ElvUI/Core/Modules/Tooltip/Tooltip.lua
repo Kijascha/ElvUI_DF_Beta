@@ -692,12 +692,11 @@ local function OnTooltipSetItem(tt) -- For WoW10 and the new tooltip stuff
 	if TT.db.itemQuality then
 		local _, _, quality = GetItemInfo(link)
 		if quality and quality > 1 then
+			local r, g, b = GetItemQualityColor(quality)
 			if tt.NineSlice then
-				local r,g,b = GetItemQualityColor(quality)
-				tt.NineSlice:SetBorderColor(r,g,b,1)
+				tt.NineSlice:SetBorderColor(r, g, b)
 			else
-				local r,g,b = GetItemQualityColor(quality)
-				tt:SetBackdropBorderColor(r,g,b,1)
+				tt:SetBackdropBorderColor(r, g, b)
 			end
 			tt.qualityChanged = true
 		end

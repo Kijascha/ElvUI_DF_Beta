@@ -5,6 +5,7 @@ local Skins = E:GetModule('Skins')
 local _G = _G
 local tonumber = tonumber
 local next, format = next, format
+local hooksecurefunc = hooksecurefunc
 
 local CreateFrame = CreateFrame
 local HideUIPanel = HideUIPanel
@@ -21,9 +22,11 @@ local SecureActionButton_OnClick = SecureActionButton_OnClick
 local SetBinding = SetBinding
 local GameTooltip = GameTooltip
 local SpellBook_GetSpellBookSlot = SpellBook_GetSpellBookSlot
-local MAX_ACCOUNT_MACROS = MAX_ACCOUNT_MACROS
+
 local CHARACTER_SPECIFIC_KEYBINDING_TOOLTIP = CHARACTER_SPECIFIC_KEYBINDING_TOOLTIP
 local CHARACTER_SPECIFIC_KEYBINDINGS = CHARACTER_SPECIFIC_KEYBINDINGS
+local QUICK_KEYBIND_MODE = QUICK_KEYBIND_MODE
+local MAX_ACCOUNT_MACROS = MAX_ACCOUNT_MACROS
 
 local bind = CreateFrame('Frame', 'ElvUI_KeyBinder', E.UIParent)
 AB.KeyBinder = bind
@@ -255,41 +258,48 @@ do
 	end
 
 	local function MacroFrame_FirstUpdate(frame)
-		for _, button in next, { _G.MacroFrame.MacroSelector.ScrollBox.ScrollTarget:GetChildren() } do
+		for _, button in next, { frame.MacroSelector.ScrollBox.ScrollTarget:GetChildren() } do
 			button:HookScript('OnEnter', OnEnter)
 		end
 
 		AB:Unhook(frame, 'Update')
 	end
 
-	local macro, binding = false, false
-	function AB:ADDON_LOADED(_, addon)
+	function AB:ADDON_LOADED(event, addon)
 		if addon == 'Blizzard_MacroUI' then
-			AB:SecureHook(_G.MacroFrame, 'Update', MacroFrame_FirstUpdate)
-
-			macro = true
-		elseif addon == 'Blizzard_BindingUI' then
-			local parent = _G.KeyBindingFrame
-
-			if parent.quickKeybindButton then
-				parent.quickKeybindButton:Hide()
+			if _G.MacroFrame.Update then
+				AB:SecureHook(_G.MacroFrame, 'Update', MacroFrame_FirstUpdate)
+			else
+				for i = 1, MAX_ACCOUNT_MACROS do
+					_G['MacroButton'..i]:HookScript('OnEnter', OnEnter)
+				end
 			end
 
-			local frame = CreateFrame('Button', 'ElvUI_KeybindButton', parent, 'UIPanelButtonTemplate')
-			frame:Width(150)
-			frame:Point('LEFT', parent.bindingsContainer)
-			frame:Point('BOTTOM', parent.cancelButton)
-			frame:SetScript('OnClick', keybindButtonClick)
-			frame:SetText('ElvUI Keybind')
-
-			Skins:HandleButton(frame)
-
-			binding = true
+			AB:UnregisterEvent(event)
 		end
+	end
+end
 
-		if macro and binding then
-			AB:UnregisterEvent('ADDON_LOADED')
+do
+	local function UpdateScrollBox(scrollBox)
+		for _, element in next, { scrollBox.ScrollTarget:GetChildren() } do
+			local data = element and element.data
+			if data and data.buttonText == QUICK_KEYBIND_MODE then
+				local button = element.Button
+				if button and button:GetScript('OnClick') ~= keybindButtonClick then
+					button:SetScript('OnClick', keybindButtonClick)
+					button:SetFormattedText('%s Keybind', E.title)
+				end
+			end
 		end
+	end
+
+	function AB:SettingsDisplayCategory(category)
+		local list = category.name ~= 'Keybindings' and self:GetSettingsList()
+		if not list or not list.ScrollBox then return end
+
+		UpdateScrollBox(list.ScrollBox)
+		hooksecurefunc(list.ScrollBox, 'Update', UpdateScrollBox)
 	end
 end
 
@@ -303,6 +313,10 @@ function AB:LoadKeyBinder()
 	bind.texture:SetAllPoints(bind)
 	bind.texture:SetColorTexture(0, 0, 0, .25)
 	bind:Hide()
+
+	if E.WoW10 then
+		hooksecurefunc(_G.SettingsPanel, 'DisplayCategory', AB.SettingsDisplayCategory)
+	end
 
 	bind:SetScript('OnEnter', function(b) local db = b.button:GetParent().db if db and db.mouseover then AB:Button_OnEnter(b.button) end end)
 	bind:SetScript('OnLeave', function(b) AB:BindHide() local db = b.button:GetParent().db if db and db.mouseover then AB:Button_OnLeave(b.button) end end)
