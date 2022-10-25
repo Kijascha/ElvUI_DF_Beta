@@ -987,25 +987,30 @@ function TT:Initialize()
 	TT:SecureHook(GameTooltip, 'SetUnitAura')
 	TT:SecureHook(GameTooltip, 'SetUnitBuff', 'SetUnitAura')
 	TT:SecureHook(GameTooltip, 'SetUnitDebuff', 'SetUnitAura')	
-
-	if E.WoW10 then
-	--[[
-		OnTooltipSetSpell,OnTooltipSetItem and OnTooltipSetUnit seems to be removed in 100002
-		TooltipDataProcessor.AddTooltipPostCall is the new way to modify tooltips according to:
-		https://wowpedia.fandom.com/wiki/Patch_10.0.2/API_changes#Tooltip_Changes
-	]]
-		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Spell, OnTooltipSetSpell)
-		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, OnTooltipSetItem)
-		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, OnTooltipSetUnit)		
+	
+	if E.wowtoc >= 100002 then
+		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip)
+			if tooltip == GameTooltip then
+				TT:GameTooltip_OnTooltipSetItem(tooltip)
+			end
+		end)
+		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Spell, function(tooltip)
+			if tooltip == GameTooltip or tooltip == _G.ElvUISpellBookTooltip then
+				TT:GameTooltip_OnTooltipSetSpell(tooltip)
+			end
+		end)
+		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, function(tooltip)
+			if tooltip == GameTooltip then
+				TT:GameTooltip_OnTooltipSetUnit(tooltip)
+			end
+		end)
 	else
 		TT:SecureHookScript(GameTooltip, 'OnTooltipSetSpell', 'GameTooltip_OnTooltipSetSpell')
 		TT:SecureHookScript(GameTooltip, 'OnTooltipSetItem', 'GameTooltip_OnTooltipSetItem')
 		TT:SecureHookScript(GameTooltip, 'OnTooltipSetUnit', 'GameTooltip_OnTooltipSetUnit')
+		TT:SecureHookScript(_G.ElvUISpellBookTooltip, 'OnTooltipSetSpell', 'GameTooltip_OnTooltipSetSpell')
 	end
-
-	TT:SecureHookScript(GameTooltip, 'OnTooltipCleared', 'GameTooltip_OnTooltipCleared')
-	TT:SecureHookScript(GameTooltip.StatusBar, 'OnValueChanged', 'GameTooltipStatusBar_OnValueChanged')
-	TT:SecureHookScript(_G.ElvUISpellBookTooltip, 'OnShow', 'GameTooltip_OnTooltipSetSpell') -- don't know how to change this properly yet, OnTooltipSetSpell caused an error in WoW10 - hooked OnShow instead for the moment
+	
 	TT:RegisterEvent('MODIFIER_STATE_CHANGED')	
 	
 	if E.Retail and not E.WoW10 then
