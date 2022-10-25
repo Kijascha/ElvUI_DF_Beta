@@ -143,8 +143,7 @@ function S:Blizzard_Communities()
 	S:HandleDropDownBox(CommunitiesFrame.StreamDropDownMenu)
 
 	hooksecurefunc(CommunitiesFrameCommunitiesList.ScrollBox, 'Update', function(frame)
-		for i = 1, frame.ScrollTarget:GetNumChildren() do
-			local child = select(i, frame.ScrollTarget:GetChildren())
+		for _, child in next, { frame.ScrollTarget:GetChildren() } do
 			if not child.backdrop then
 				child:CreateBackdrop('Transparent')
 				child.backdrop:Point('TOPLEFT', 5, -5)
@@ -334,14 +333,13 @@ function S:Blizzard_Communities()
 	CommunitiesFrame.MemberList.ScrollBar:GetChildren():Hide()
 	S:HandleScrollBar(MemberList.ScrollBar)
 
-	--[[hooksecurefunc(CommunitiesFrame.MemberList, 'RefreshListDisplay', function(s)
-		for i = 1, s.ColumnDisplay:GetNumChildren() do
-			local child = select(i, s.ColumnDisplay:GetChildren())
+	--[[hooksecurefunc(CommunitiesFrame.MemberList, 'RefreshListDisplay', function(frame)
+		for _, child in next, { frame.ColumnDisplay:GetChildren() } do
 			child:StripTextures()
 			child:SetTemplate('Transparent')
 		end
 
-		for _, button in ipairs(s.ListScrollFrame.buttons or {}) do
+		for _, button in ipairs(frame.ListScrollFrame.buttons or {}) do
 			if button and not button.hooked then
 				hooksecurefunc(button, 'RefreshExpandedColumns', UpdateNames)
 
@@ -568,7 +566,6 @@ function S:Blizzard_Communities()
 	S:HandleButton(CommunitiesFrame.NotificationSettingsDialog.ScrollFrame.Child.NoneButton)
 	S:HandleButton(CommunitiesFrame.NotificationSettingsDialog.OkayButton)
 	S:HandleButton(CommunitiesFrame.NotificationSettingsDialog.CancelButton)
-	--S:HandleTrimScrollBar(CommunitiesFrame.NotificationSettingsDialog.ScrollFrame.ScrollBar) -- Adjust me
 
 	-- Create Channel Dialog
 	local EditStreamDialog = CommunitiesFrame.EditStreamDialog
@@ -657,8 +654,7 @@ function S:Blizzard_Communities()
 
 	hooksecurefunc(ApplicantList, 'BuildList', function(list)
 		local columnDisplay = list.ColumnDisplay
-		for i = 1, columnDisplay:GetNumChildren() do
-			local child = select(i, columnDisplay:GetChildren())
+		for _, child in next, { columnDisplay:GetChildren() } do
 			if not child.IsSkinned then
 				child:StripTextures()
 

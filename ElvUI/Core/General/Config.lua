@@ -2,11 +2,11 @@ local E, L, V, P, G = unpack(ElvUI)
 local S = E:GetModule('Skins')
 
 local _G = _G
+local next, strsplit = next, strsplit
 local unpack, sort, gsub, wipe = unpack, sort, gsub, wipe
 local strupper, ipairs, tonumber = strupper, ipairs, tonumber
 local floor, select, type, min = floor, select, type, min
 local pairs, tinsert, tContains = pairs, tinsert, tContains
-local strsplit = strsplit
 
 local hooksecurefunc = hooksecurefunc
 local EnableAddOn = EnableAddOn
@@ -122,10 +122,8 @@ function E:Grid_Create()
 		grid:SetFrameStrata('BACKGROUND')
 	else
 		grid.regionCount = 0
-		local numRegions = grid:GetNumRegions()
-		for i = 1, numRegions do
-			local region = select(i, grid:GetRegions())
-			if region and region.IsObjectType and region:IsObjectType('Texture') then
+		for _, region in next, { grid:GetRegions() } do
+			if region.IsObjectType and region:IsObjectType('Texture') then
 				grid.regionCount = grid.regionCount + 1
 				region:SetAlpha(0)
 			end
@@ -1132,8 +1130,7 @@ function E:ToggleOptionsUI(msg)
 		if not frame.bottomHolder then -- window was released or never opened
 			frame:HookScript('OnHide', E.Config_WindowClosed)
 
-			for i=1, frame:GetNumChildren() do
-				local child = select(i, frame:GetChildren())
+			for _, child in next, { frame:GetChildren() } do
 				if child:IsObjectType('Button') and child:GetText() == _G.CLOSE then
 					frame.originalClose = child
 					child:Hide()
@@ -1146,8 +1143,7 @@ function E:ToggleOptionsUI(msg)
 
 			local unskinned = not E.private.skins.ace3Enable
 			if unskinned then
-				for i = 1, frame:GetNumRegions() do
-					local region = select(i, frame:GetRegions())
+				for _, region in next, { frame:GetRegions() } do
 					if region:IsObjectType('Texture') and region:GetTexture() == 131080 then
 						region:SetAlpha(0)
 					end

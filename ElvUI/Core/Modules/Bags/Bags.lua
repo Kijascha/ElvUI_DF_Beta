@@ -9,7 +9,7 @@ local LSM = E.Libs.LSM
 local _G = _G
 local type, ipairs, unpack, select, pcall = type, ipairs, unpack, select, pcall
 local strmatch, tinsert, tremove, wipe = strmatch, tinsert, tremove, wipe
-local next, max, floor, format, sub = next, max, floor, format, strsubb
+local next, max, floor, format, sub = next, max, floor, format, strsub
 
 local BreakUpLargeNumbers = BreakUpLargeNumbers
 local CreateFrame = CreateFrame
@@ -60,6 +60,7 @@ local IsBagOpen, IsOptionFrameOpen = IsBagOpen, IsOptionFrameOpen
 local IsShiftKeyDown, IsControlKeyDown = IsShiftKeyDown, IsControlKeyDown
 local CloseBag, CloseBackpack, CloseBankFrame = CloseBag, CloseBackpack, CloseBankFrame
 
+local EditBox_HighlightText = EditBox_HighlightText
 local BankFrameItemButton_Update = BankFrameItemButton_Update
 local BankFrameItemButton_UpdateLocked = BankFrameItemButton_UpdateLocked
 local C_TransmogCollection_PlayerHasTransmogByItemInfo = C_TransmogCollection and C_TransmogCollection.PlayerHasTransmogByItemInfo
@@ -75,7 +76,7 @@ local IG_BACKPACK_CLOSE = SOUNDKIT.IG_BACKPACK_CLOSE
 local IG_BACKPACK_OPEN = SOUNDKIT.IG_BACKPACK_OPEN
 local ITEMQUALITY_COMMON = Enum.ItemQuality.Common or Enum.ItemQuality.Standard
 local ITEMQUALITY_POOR = Enum.ItemQuality.Poor
-local MAX_WATCHED_TOKENS = MAX_WATCHED_TOKENS
+local MAX_WATCHED_TOKENS = MAX_WATCHED_TOKENS or 3
 local NUM_BAG_FRAMES = NUM_BAG_FRAMES
 local NUM_BAG_SLOTS = NUM_BAG_SLOTS
 local NUM_BANKGENERIC_SLOTS = NUM_BANKGENERIC_SLOTS
@@ -108,7 +109,7 @@ B.GearFilters = {
 	FILTER_FLAG_JUNK,
 }
 
-if E.WoW10 then
+if E.Retail then
 	tinsert(B.GearFilters, BagSlotFlags.PriorityQuestItems)
 end
 
@@ -176,7 +177,7 @@ B.QuestSlots = {}
 B.ItemLevelSlots = {}
 B.BAG_FILTER_ICONS = {}
 
-if E.WoW10 then
+if E.Retail then
 	B.BAG_FILTER_ICONS[FILTER_FLAG_EQUIPMENT] = 'bags-icon-equipment'
 	B.BAG_FILTER_ICONS[FILTER_FLAG_CONSUMABLES] = 'bags-icon-consumables'
 	B.BAG_FILTER_ICONS[FILTER_FLAG_TRADE_GOODS] = 'bags-icon-tradegoods'
@@ -187,8 +188,6 @@ else
 	B.BAG_FILTER_ICONS[FILTER_FLAG_CONSUMABLES] = 134873	-- Interface/ICONS/INV_Potion_93
 	B.BAG_FILTER_ICONS[FILTER_FLAG_TRADE_GOODS] = 132906	-- Interface/ICONS/INV_Fabric_Silk_02
 end
-
-
 
 local itemSpellID = {
 	-- Deposit Anima: Infuse (value) stored Anima into your covenant's Reservoir.
@@ -436,7 +435,8 @@ function B:UpdateItemDisplay()
 				if B.db.itemLevelCustomColorEnable then
 					slot.itemLevel:SetTextColor(B.db.itemLevelCustomColor.r, B.db.itemLevelCustomColor.g, B.db.itemLevelCustomColor.b)
 				else
-					slot.itemLevel:SetTextColor(B:GetItemQualityColor(slot.rarity))
+					local r, g, b = B:GetItemQualityColor(slot.rarity)
+					slot.itemLevel:SetTextColor(r, g, b)
 				end
 
 				slot.bindType:FontTemplate(LSM:Fetch('font', B.db.itemLevelFont), B.db.itemLevelFontSize, B.db.itemLevelFontOutline)
@@ -836,14 +836,14 @@ end
 
 function B:UpdateCooldown(slot)
 	local start, duration, enabled = GetContainerItemCooldown(slot.BagID, slot.SlotID)
-	if duration > 0 and enabled == 0 then
+	if duration and duration > 0 and enabled == 0 then
 		SetItemButtonTextureVertexColor(slot, 0.4, 0.4, 0.4)
 	else
 		SetItemButtonTextureVertexColor(slot, 1, 1, 1)
 	end
 
 	local cd = slot.Cooldown
-	if duration > 0 and enabled == 1 then
+	if duration and duration > 0 and enabled == 1 then
 		local newStart, newDuration = not cd.start or cd.start ~= start, not cd.duration or cd.duration ~= duration
 		if newStart or newDuration then
 			cd:SetCooldown(start, duration)
@@ -889,7 +889,7 @@ function B:IsSortIgnored(bagID)
 		return GetBankAutosortDisabled()
 	elseif bagID == BACKPACK_CONTAINER then
 		return GetBackpackAutosortDisabled()
-	elseif bagID > NUM_BAG_SLOTS and not E.WoW10 then
+	elseif bagID > NUM_BAG_SLOTS and not E.Retail then
 		return GetBankBagSlotFlag(bagID - NUM_BAG_SLOTS, FILTER_FLAG_IGNORE)
 	else
 		return GetBagSlotFlag(bagID, FILTER_FLAG_IGNORE)
@@ -899,7 +899,7 @@ end
 function B:GetFilterFlagInfo(bagID, isBank)
 	for _, flag in next, B.GearFilters do
 		if flag ~= FILTER_FLAG_IGNORE then
-			if isBank and not E.WoW10 and GetBankBagSlotFlag(bagID - NUM_BAG_SLOTS, flag) or GetBagSlotFlag(bagID, flag) then
+			if isBank and not E.Retail and GetBankBagSlotFlag(bagID - NUM_BAG_SLOTS, flag) or GetBagSlotFlag(bagID, flag) then
 				return flag, B.BAG_FILTER_ICONS[flag], B.AssignmentColors[flag]
 			end
 		end
@@ -910,7 +910,7 @@ function B:SetFilterFlag(bagID, flag, value)
 	B.AssignBagDropdown.holder = nil
 
 	local isBank = bagID > NUM_BAG_SLOTS
-	return isBank and not E.WoW10 and SetBankBagSlotFlag(bagID - NUM_BAG_SLOTS, flag, value) or SetBagSlotFlag(bagID, flag, value)
+	return isBank and not E.Retail and SetBankBagSlotFlag(bagID - NUM_BAG_SLOTS, flag, value) or SetBagSlotFlag(bagID, flag, value)
 end
 
 function B:GetBagAssignedInfo(holder, isBank)
@@ -1258,7 +1258,7 @@ function B:UpdateTokens()
 		button:Hide()
 	end
 
-	for i = 1, (MAX_WATCHED_TOKENS or 3) do
+	for i = 1, MAX_WATCHED_TOKENS do
 		local info = GetBackpackCurrencyInfo(i)
 		if not (info and info.name) then break end
 
@@ -1331,14 +1331,15 @@ function B:GetGrays(vendor)
 
 	for bagID = 0, 4 do
 		for slotID = 1, B:GetContainerNumSlots(bagID) do
-			local _, count, _, _, _, _, itemLink, _, noValue, itemID = GetContainerItemInfo(bagID, slotID)
-			if itemLink and not noValue and not B.ExcludeGrays[itemID] then
+			local info = GetContainerItemInfo(bagID, slotID)
+			local itemLink = info and info.hyperlink
+			if itemLink and not info.hasNoValue and not B.ExcludeGrays[info.itemID] then
 				local _, _, rarity, _, _, _, _, _, _, _, itemPrice, classID, _, bindType = GetItemInfo(itemLink)
 
 				if rarity and rarity == 0 -- grays :o
 				and (classID ~= 12 or bindType ~= 4) -- Quest can be classID:12 or bindType:4
-				and (not IsCosmeticItem(itemLink) or C_TransmogCollection_PlayerHasTransmogByItemInfo(itemLink)) then -- skip transmogable items
-					local stackCount = count or 1
+				and (not E.Retail or not IsCosmeticItem(itemLink) or C_TransmogCollection_PlayerHasTransmogByItemInfo(itemLink)) then -- skip transmogable items
+					local stackCount = info.stackCount or 1
 					local stackPrice = itemPrice * stackCount
 
 					if vendor then
@@ -1513,7 +1514,7 @@ function B:ConstructContainerFrame(name, isBank)
 	for i, bagID in next, f.BagIDs do
 		local bagNum = isBank and (bagID == BANK_CONTAINER and 0 or (bagID - bankOffset)) or (bagID - (E.Retail and 0 or 1))
 		local holderName = bagID == BACKPACK_CONTAINER and 'ElvUIMainBagBackpack' or bagID == KEYRING_CONTAINER and 'ElvUIKeyRing' or format('ElvUI%sBag%d%s', isBank and 'Bank' or 'Main', bagNum, E.Retail and '' or 'Slot')
-		local inherit = (E.WoW10 and not isBank and '') or isBank and 'BankItemButtonBagTemplate' or (bagID == BACKPACK_CONTAINER or bagID == KEYRING_CONTAINER) and (not E.Retail and 'ItemButtonTemplate,' or '')..'ItemAnimTemplate' or 'BagSlotButtonTemplate'
+		local inherit = (E.Retail and not isBank and '') or isBank and 'BankItemButtonBagTemplate' or (bagID == BACKPACK_CONTAINER or bagID == KEYRING_CONTAINER) and (not E.Retail and 'ItemButtonTemplate,' or '')..'ItemAnimTemplate' or 'BagSlotButtonTemplate'
 
 		local holder = CreateFrame((E.Retail and 'ItemButton' or 'CheckButton'), holderName, f.ContainerHolder, inherit)
 		f.ContainerHolderByBagID[bagID] = holder
@@ -1648,9 +1649,9 @@ function B:ConstructContainerFrame(name, isBank)
 	f.editBox:CreateBackdrop()
 	f.editBox:Height(16)
 	f.editBox:SetAutoFocus(false)
-	f.editBox:SetScript('OnEscapePressed', B.ResetAndClear)
-	f.editBox:SetScript('OnEditFocusGained', f.editBox.HighlightText)
 	f.editBox:HookScript('OnTextChanged', B.UpdateSearch)
+	f.editBox:SetScript('OnEscapePressed', B.ResetAndClear)
+	f.editBox:SetScript('OnEditFocusGained', EditBox_HighlightText)
 	f.editBox.clearButton:HookScript('OnClick', B.ResetAndClear)
 	f.editBox.skipUpdate = true -- we need to skip the first set of '' from bank
 
@@ -1876,7 +1877,7 @@ function B:ConstructContainerFrame(name, isBank)
 			f.currencyButton:Point('TOPRIGHT', f.holderFrame, 'BOTTOMRIGHT', 0, 18)
 			f.currencyButton:Height(22)
 
-			for i = 1, (MAX_WATCHED_TOKENS or 3) do
+			for i = 1, MAX_WATCHED_TOKENS do
 				local currency = CreateFrame('Button', format('%sCurrencyButton%d', name, i), f.currencyButton, 'BackpackTokenTemplate')
 				currency:Size(18)
 				currency:SetTemplate()
@@ -2288,6 +2289,7 @@ if C_Container then
 			freeScreenHeight = screenHeight - yOffset
 			leftMostPoint = screenWidth - xOffset
 			column = 1
+
 			local frameHeight
 			local framesInColumn = 0
 			local forceScaleDecrease = false
@@ -2295,12 +2297,10 @@ if C_Container then
 				framesInColumn = framesInColumn + 1
 				frameHeight = frame:GetHeight(true)
 				if freeScreenHeight < frameHeight then
-					if framesInColumn == 1 then
-						-- If this is the only frame in the column and it doesn't fit, then scale must be reduced and the iteration restarted
+					if framesInColumn == 1 then -- If this is the only frame in the column and it doesn't fit, then scale must be reduced and the iteration restarted
 						forceScaleDecrease = true
 						break
-					else
-						-- Start a new column
+					else -- Start a new column
 						column = column + 1
 						framesInColumn = 0 -- kind of a lie, at this point there's actually a single frame in the new column, but this simplifies where to increment.
 						leftMostPoint = screenWidth - ( column * frame:GetWidth(true) * containerScale ) - xOffset
@@ -2324,25 +2324,25 @@ if C_Container then
 	function B:UpdateContainerFrameAnchors()
 		local containerScale = GetContainerScale()
 		local screenHeight = E.screenHeight / containerScale
+
 		-- Adjust the start anchor for bags depending on the multibars
 		--local xOffset = GetInitialContainerFrameOffsetX() / containerScale
 		local yOffset = CONTAINER_OFFSET_Y / containerScale
 		-- freeScreenHeight determines when to start a new column of bags
 		local freeScreenHeight = screenHeight - yOffset
-		local previousBag
-		local firstBagInMostRecentColumn
+		local previousBag, recentBagColumn
+
 		for index, frame in ipairs(_G.ContainerFrameSettingsManager:GetBagsShown()) do
 			frame:SetScale(containerScale)
-			if index == 1 then
-				-- First bag
+
+			if index == 1 then -- First bag
 				frame:SetPoint("BOTTOMRIGHT", _G.ElvUIBagMover, "BOTTOMRIGHT", E.Spacing, -E.Border)
-			elseif (freeScreenHeight < frame:GetHeight()) or previousBag:IsCombinedBagContainer() then
-				-- Start a new column
+				recentBagColumn = frame
+			elseif (freeScreenHeight < frame:GetHeight()) or previousBag:IsCombinedBagContainer() then -- Start a new column
 				freeScreenHeight = screenHeight - yOffset
-				frame:SetPoint("BOTTOMRIGHT", firstBagInMostRecentColumn, "BOTTOMLEFT", -11, 0)
-				firstBagInMostRecentColumn = frame
-			else
-				-- Anchor to the previous bag
+				frame:SetPoint("BOTTOMRIGHT", recentBagColumn, "BOTTOMLEFT", -11, 0)
+				recentBagColumn = frame
+			else -- Anchor to the previous bag
 				frame:SetPoint("BOTTOMRIGHT", previousBag, "TOPRIGHT", 0, CONTAINER_SPACING)
 			end
 
@@ -2354,6 +2354,7 @@ else
 	function B:UpdateContainerFrameAnchors()
 		local xOffset, yOffset, screenHeight, freeScreenHeight, leftMostPoint, column
 		local screenWidth = E.screenWidth
+		local bags = _G.ContainerFrame1.bags
 		local containerScale = 1
 		local leftLimit = 0
 
@@ -2371,11 +2372,12 @@ else
 			leftMostPoint = screenWidth - xOffset
 			column = 1
 
-			for _, frame in ipairs(_G.ContainerFrame1.Items) do
+			for _, name in ipairs(bags) do
+				local frame = _G[name]
 				local frameHeight = frame:GetHeight()
 				if freeScreenHeight < frameHeight then
 					column = column + 1 -- Start a new column
-					leftMostPoint = screenWidth - ( column * CONTAINER_WIDTH * containerScale ) - xOffset
+					leftMostPoint = screenWidth - (column * CONTAINER_WIDTH * containerScale) - xOffset
 					freeScreenHeight = screenHeight - yOffset
 				end
 
@@ -2395,37 +2397,32 @@ else
 
 		screenHeight = E.screenHeight / containerScale
 		-- Adjust the start anchor for bags depending on the multibars
-		-- xOffset = CONTAINER_OFFSET_X / containerScale
 		yOffset = CONTAINER_OFFSET_Y / containerScale
 		-- freeScreenHeight determines when to start a new column of bags
 		freeScreenHeight = screenHeight - yOffset
 		column = 0
 
 		local bagsPerColumn = 0
-		for index, frame in ipairs(_G.ContainerFrame1.Items) do
+		for index, name in ipairs(bags) do
+			local frame = _G[name]
+			local frameHeight = frame:GetHeight()
+
 			frame:SetScale(1)
 
-			if index == 1 then
-				-- First bag
+			if index == 1 then -- First bag
 				frame:Point('BOTTOMRIGHT', _G.ElvUIBagMover, 'BOTTOMRIGHT', E.Spacing, -E.Border)
 				bagsPerColumn = bagsPerColumn + 1
-			elseif freeScreenHeight < frame:GetHeight() then
-				-- Start a new column
+			elseif freeScreenHeight < frameHeight then -- Start a new column
 				column = column + 1
 				freeScreenHeight = screenHeight - yOffset
-				if column > 1 then
-					frame:Point('BOTTOMRIGHT', _G.ContainerFrame1.Items[(index - bagsPerColumn) - 1], 'BOTTOMLEFT', -CONTAINER_SPACING, 0 )
-				else
-					frame:Point('BOTTOMRIGHT', _G.ContainerFrame1.Items[index - bagsPerColumn], 'BOTTOMLEFT', -CONTAINER_SPACING, 0 )
-				end
+				frame:Point('BOTTOMRIGHT', bags[(index - bagsPerColumn) - (column > 1 and 1 or 0)], 'BOTTOMLEFT', -CONTAINER_SPACING, 0 )
 				bagsPerColumn = 0
-			else
-				-- Anchor to the previous bag
-				frame:Point('BOTTOMRIGHT', _G.ContainerFrame1.Items[index - 1], 'TOPRIGHT', 0, CONTAINER_SPACING)
+			else -- Anchor to the previous bag
+				frame:Point('BOTTOMRIGHT', bags[index - 1], 'TOPRIGHT', 0, CONTAINER_SPACING)
 				bagsPerColumn = bagsPerColumn + 1
 			end
 
-			freeScreenHeight = freeScreenHeight - frame:GetHeight() - VISIBLE_CONTAINER_SPACING
+			freeScreenHeight = freeScreenHeight - frameHeight - VISIBLE_CONTAINER_SPACING
 		end
 	end
 end
@@ -2433,17 +2430,15 @@ end
 function B:PostBagMove()
 	if not E.private.bags.enable then return end
 
-	-- self refers to the mover (bag or bank)
-	local x, y = self:GetCenter()
-	local screenHeight = E.UIParent:GetTop()
-	local screenWidth = E.UIParent:GetRight()
+	local x, y = self:GetCenter() -- self refers to the mover (bag or bank)
+	if not x or not y then return end
 
-	if y > (screenHeight * 0.5) then
+	if y > (E.screenHeight * 0.5) then
 		self:SetText(self.textGrowDown)
-		self.POINT = ((x > (screenWidth*0.5)) and 'TOPRIGHT' or 'TOPLEFT')
+		self.POINT = x > (E.screenWidth * 0.5) and 'TOPRIGHT' or 'TOPLEFT'
 	else
 		self:SetText(self.textGrowUp)
-		self.POINT = ((x > (screenWidth*0.5)) and 'BOTTOMRIGHT' or 'BOTTOMLEFT')
+		self.POINT = x > (E.screenWidth * 0.5) and 'BOTTOMRIGHT' or 'BOTTOMLEFT'
 	end
 
 	local bagFrame = (self.name == 'ElvUIBankMover' and B.BankFrame) or B.BagFrame
@@ -2641,7 +2636,7 @@ function B:Initialize()
 		[FILTER_FLAG_JUNK] = E:GetColorTable(B.db.colors.assignment.junk),
 	}
 
-	if E.WoW10 then
+	if E.Retail then
 		B.AssignmentColors[BagSlotFlags.PriorityQuestItems] = E:GetColorTable(B.db.colors.items.questItem)
 	end
 

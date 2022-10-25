@@ -2,7 +2,7 @@ local E, L, V, P, G = unpack(ElvUI)
 local S = E:GetModule('Skins')
 
 local _G = _G
-local pairs, select = pairs, select
+local next, select = next, select
 local CreateFrame = CreateFrame
 local GetProfessionInfo = GetProfessionInfo
 local IsPassiveSpell = IsPassiveSpell
@@ -74,7 +74,7 @@ function S:SpellBookFrame()
 	local SpellBookFrame = _G.SpellBookFrame
 	S:HandlePortraitFrame(SpellBookFrame)
 
-	for _, frame in pairs({_G.SpellBookSpellIconsFrame, _G.SpellBookSideTabsFrame, _G.SpellBookPageNavigationFrame}) do
+	for _, frame in next, { _G.SpellBookSpellIconsFrame, _G.SpellBookSideTabsFrame, _G.SpellBookPageNavigationFrame } do
 		frame:StripTextures()
 	end
 
@@ -111,13 +111,11 @@ function S:SpellBookFrame()
 		local icon = _G['SpellButton'..i..'IconTexture']
 		local highlight =_G['SpellButton'..i..'Highlight']
 
-		for j = 1, button:GetNumRegions() do
-			local region = select(j, button:GetRegions())
-			if region:IsObjectType('Texture') then
-				if region ~= button.FlyoutArrow and region ~= button.GlyphIcon and region ~= button.GlyphActivate
-					and region ~= button.AbilityHighlight and region ~= button.SpellHighlightTexture then
-					region:SetTexture()
-				end
+		for _, region in next, { button:GetRegions() } do
+			if region:IsObjectType('Texture') and (region ~= button.FlyoutArrow
+			and region ~= button.GlyphIcon and region ~= button.GlyphActivate
+			and region ~= button.AbilityHighlight and region ~= button.SpellHighlightTexture) then
+				region:SetTexture()
 			end
 		end
 
@@ -169,7 +167,7 @@ function S:SpellBookFrame()
 	end)
 
 	--Profession Tab
-	for _, button in pairs({_G.PrimaryProfession1, _G.PrimaryProfession2, _G.SecondaryProfession1, _G.SecondaryProfession2, _G.SecondaryProfession3}) do
+	for _, button in next, { _G.PrimaryProfession1, _G.PrimaryProfession2, _G.SecondaryProfession1, _G.SecondaryProfession2, _G.SecondaryProfession3 } do
 		button.missingHeader:SetTextColor(1, 1, 0)
 
 		if E.private.skins.parchmentRemoverEnable then
@@ -229,7 +227,6 @@ function S:SpellBookFrame()
 		local texture = select(2, GetProfessionInfo(id))
 		if texture then frame.icon:SetTexture(texture) end
 	end)
-
 
 	hooksecurefunc('UpdateProfessionButton', function(button)
 		local spellIndex = button:GetID() + button:GetParent().spellOffset

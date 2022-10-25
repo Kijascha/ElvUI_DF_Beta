@@ -2,7 +2,7 @@ local E, L, V, P, G = unpack(ElvUI)
 local S = E:GetModule('Skins')
 
 local _G = _G
-local pairs, select = pairs, select
+local pairs, next = pairs, next
 local hooksecurefunc = hooksecurefunc
 
 local function HandleInputBox(box)
@@ -74,8 +74,7 @@ function S:Blizzard_Professions()
 	GuildFrame.Container:StripTextures()
 	GuildFrame.Container:CreateBackdrop('Transparent')
 
-	for i = 1, 2 do
-		local tab = select(i, ProfessionsFrame.TabSystem:GetChildren())
+	for _, tab in next, { ProfessionsFrame.TabSystem:GetChildren() } do
 		S:HandleTab(tab)
 	end
 
@@ -174,8 +173,7 @@ function S:Blizzard_Professions()
 	S:HandleTrimScrollBar(OutputLog.ScrollBar, true)
 
 	hooksecurefunc(OutputLog.ScrollBox, 'Update', function(frame)
-		for i = 1, frame.ScrollTarget:GetNumChildren() do
-			local child = select(i, frame.ScrollTarget:GetChildren())
+		for _, child in next, { frame.ScrollTarget:GetChildren() } do
 			if not child.isSkinned then
 				local itemContainer = child.ItemContainer
 				if itemContainer then

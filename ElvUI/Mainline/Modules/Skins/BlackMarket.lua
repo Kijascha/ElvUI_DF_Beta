@@ -2,7 +2,7 @@ local E, L, V, P, G = unpack(ElvUI)
 local S = E:GetModule('Skins')
 
 local _G = _G
-local select, unpack, pairs = select, unpack, pairs
+local next, unpack, pairs = next, unpack, pairs
 
 local GetItemInfo = GetItemInfo
 local hooksecurefunc = hooksecurefunc
@@ -57,9 +57,8 @@ function S:Blizzard_BlackMarketUI()
 	BlackMarketFrame.HotDeal.Item.IconTexture:SetTexCoord(unpack(E.TexCoords))
 	BlackMarketFrame.HotDeal.Item.IconBorder:Kill()
 
-	for i = 1, BlackMarketFrame:GetNumRegions() do
-		local region = select(i, BlackMarketFrame:GetRegions())
-		if region and region:IsObjectType('FontString') and region:GetText() == _G.BLACK_MARKET_TITLE then
+	for _, region in next, { BlackMarketFrame:GetRegions() } do
+		if region:IsObjectType('FontString') and region:GetText() == _G.BLACK_MARKET_TITLE then
 			region:ClearAllPoints()
 			region:Point('TOP', BlackMarketFrame, 'TOP', 0, -4)
 		end

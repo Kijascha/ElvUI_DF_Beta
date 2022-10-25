@@ -218,7 +218,7 @@ function S:Blizzard_EncounterJournal()
 	EncounterInfo.overviewScroll:Height(360)
 
 	--Tabs
-	if E.WoW10 then
+	if E.Retail then
 		for _, name in next, { 'overviewTab', 'modelTab', 'bossTab', 'lootTab' } do
 			local tab = _G.EncounterJournal.encounter.info[name]
 			tab:CreateBackdrop('Transparent')
@@ -389,8 +389,7 @@ function S:Blizzard_EncounterJournal()
 	end
 
 	hooksecurefunc(_G.EncounterJournal.instanceSelect.ScrollBox, 'Update', function(frame)
-		for i = 1, frame.ScrollTarget:GetNumChildren() do
-			local child = select(i, frame.ScrollTarget:GetChildren())
+		for _, child in next, { frame.ScrollTarget:GetChildren() } do
 			if not child.isSkinned then
 				child:SetNormalTexture(E.ClearTexture)
 				child:SetHighlightTexture(E.ClearTexture)
@@ -410,8 +409,7 @@ function S:Blizzard_EncounterJournal()
 
 	if E.private.skins.parchmentRemoverEnable then
 		hooksecurefunc(_G.EncounterJournal.encounter.info.BossesScrollBox, 'Update', function(frame)
-			for i = 1, frame.ScrollTarget:GetNumChildren() do
-				local child = select(i, frame.ScrollTarget:GetChildren())
+			for _, child in next, { frame.ScrollTarget:GetChildren() } do
 				if not child.isSkinned then
 					S:HandleButton(child)
 
@@ -430,8 +428,7 @@ function S:Blizzard_EncounterJournal()
 
 		-- Comment back in WoW10 Beta, not on Pre Patch
 		--[[hooksecurefunc(_G.EncounterJournal.encounter.info.LootContainer.ScrollBox, 'Update', function(frame)
-			for i = 1, frame.ScrollTarget:GetNumChildren() do
-				local child = select(i, frame.ScrollTarget:GetChildren())
+			for _, child in next, { frame.ScrollTarget:GetChildren() } do
 				if not child.isSkinned then
 					child.bossTexture:SetAlpha(0)
 					child.bosslessTexture:SetAlpha(0)

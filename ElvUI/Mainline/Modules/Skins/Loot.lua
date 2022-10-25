@@ -1,9 +1,8 @@
 local E, L, V, P, G = unpack(ElvUI)
 local S = E:GetModule('Skins')
-local LCG = E.Libs.CustomGlow
 
 local _G = _G
-local select, unpack = select, unpack
+local next, unpack = next, unpack
 
 local hooksecurefunc = hooksecurefunc
 local CreateFrame = CreateFrame
@@ -39,9 +38,8 @@ function S:LootFrame()
 	LootFrame:SetTemplate('Transparent')
 	S:HandleCloseButton(LootFrame.ClosePanelButton)
 
-	hooksecurefunc(LootFrame.ScrollBox, 'Update', function(self)
-		for i = 1, self.ScrollTarget:GetNumChildren() do
-			local button = select(i, self.ScrollTarget:GetChildren())
+	hooksecurefunc(LootFrame.ScrollBox, 'Update', function(frame)
+		for _, button in next, { frame.ScrollTarget:GetChildren() } do
 			local questTexture = button.IconQuestTexture
 			if not button.IsSkinned then
 				--button:StripTextures()
@@ -104,18 +102,15 @@ function S:LootFrame()
 			b:SetBackdropBorderColor(c.r, c.g, c.b)
 		end
 
-		for i=1, MasterLooterFrame:GetNumChildren() do
-			local child = select(i, MasterLooterFrame:GetChildren())
-			if child and not child.isSkinned and not child:GetName() then
-				if child:IsObjectType('Button') then
-					if child:GetPushedTexture() then
-						S:HandleCloseButton(child)
-					else
-						child:SetTemplate()
-						child:StyleButton()
-					end
-					child.isSkinned = true
+		for _, child in next, { MasterLooterFrame:GetChildren() } do
+			if not child.isSkinned and not child:GetName() and child:IsObjectType('Button') then
+				if child:GetPushedTexture() then
+					S:HandleCloseButton(child)
+				else
+					child:SetTemplate()
+					child:StyleButton()
 				end
+				child.isSkinned = true
 			end
 		end
 	end)

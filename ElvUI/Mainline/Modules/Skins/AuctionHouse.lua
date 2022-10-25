@@ -2,7 +2,7 @@ local E, L, V, P, G = unpack(ElvUI)
 local S = E:GetModule('Skins')
 
 local _G = _G
-local next, pairs, select, unpack = next, pairs, select, unpack
+local next, pairs, unpack = next, pairs, unpack
 local hooksecurefunc = hooksecurefunc
 local CreateFrame = CreateFrame
 
@@ -53,7 +53,7 @@ local function HandleListIcon(frame)
 end
 
 local function HandleSummaryIcons(frame)
-	for _, child in next, {frame.ScrollTarget:GetChildren()} do
+	for _, child in next, { frame.ScrollTarget:GetChildren() } do
 		if child.Icon then
 			if not child.IsSkinned then
 				S:HandleIcon(child.Icon)
@@ -86,9 +86,8 @@ end
 
 local function HandleHeaders(frame)
 	local maxHeaders = frame.HeaderContainer:GetNumChildren()
-	for i = 1, maxHeaders do
-		local header = select(i, frame.HeaderContainer:GetChildren())
-		if header and not header.IsSkinned then
+	for i, header in next, { frame.HeaderContainer:GetChildren() } do
+		if not header.IsSkinned then
 			header:DisableDrawLayer('BACKGROUND')
 
 			if not header.backdrop then
@@ -191,9 +190,10 @@ local function HandleSellList(frame, hasHeader, fitScrollBar)
 
 	if hasHeader then
 		frame.ScrollBox:SetTemplate('Transparent')
+
 		hooksecurefunc(frame, 'RefreshScrollFrame', HandleHeaders)
 	else
-		hooksecurefunc(frame.ScrollBox, "Update", HandleSummaryIcons)
+		hooksecurefunc(frame.ScrollBox, 'Update', HandleSummaryIcons)
 	end
 end
 

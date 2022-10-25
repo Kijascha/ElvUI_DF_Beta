@@ -1,6 +1,7 @@
 local E, L, V, P, G = unpack(ElvUI)
 
 local CopyTable = CopyTable -- Our function doesn't exist yet.
+local format = format
 local next = next
 
 P.gridSize = 64
@@ -113,13 +114,13 @@ P.general = {
 				hide = false,
 			},
 			tracking = {
-				scale = E.WoW10 and 1.2 or 0.65,
+				scale = E.Retail and 1.2 or 0.65,
 				position = 'BOTTOMLEFT',
 				xOffset = 3,
 				yOffset = 3,
 			},
 			calendar = {
-				scale = E.WoW10 and 1.2 or 1,
+				scale = E.Retail and 1.2 or 1,
 				position = 'TOPRIGHT',
 				xOffset = 0,
 				yOffset = 0,
@@ -229,7 +230,7 @@ for _, databar in next, {'experience', 'reputation', 'honor', 'threat', 'azerite
 		textFormat = 'NONE',
 		fontSize = 11,
 		font = 'PT Sans Narrow',
-		fontOutline = '',
+		fontOutline = 'NONE',
 		xOffset = 0,
 		yOffset = 0,
 		displayText = true,
@@ -1019,7 +1020,7 @@ P.chat = {
 	fade = true,
 	inactivityTimer = 100,
 	font = 'PT Sans Narrow',
-	fontOutline = '',
+	fontOutline = 'NONE',
 	fontSize = 10,
 	sticky = true,
 	emotionIcons = true,
@@ -1086,7 +1087,7 @@ P.chat = {
 	socialQueueMessages = false,
 	tabFont = 'PT Sans Narrow',
 	tabFontSize = 12,
-	tabFontOutline = '',
+	tabFontOutline = 'NONE',
 	copyChatLines = false,
 	useBTagName = false,
 	panelColor = {r = .06, g = .06, b = .06, a = 0.8},
@@ -1101,7 +1102,7 @@ P.chat = {
 P.datatexts = {
 	font = 'PT Sans Narrow',
 	fontSize = 12,
-	fontOutline = '',
+	fontOutline = 'NONE',
 	wordWrap = false,
 	panels = {
 		LeftChatDataPanel = {
@@ -1161,10 +1162,10 @@ P.tooltip = {
 	role = true,
 	gender = false,
 	font = 'PT Sans Narrow',
-	fontOutline = '',
+	fontOutline = 'NONE',
 	textFontSize = 12, -- is fontSize (has old name)
 	headerFont = 'PT Sans Narrow',
-	headerFontOutline = '',
+	headerFontOutline = 'NONE',
 	headerFontSize = 13,
 	smallTextFontSize = 12,
 	colorAlpha = 0.8,
@@ -2376,7 +2377,7 @@ P.unitframe.units.tank.targetsGroup.healPrediction = nil
 
 P.unitframe.units.assist = CopyTable(P.unitframe.units.tank)
 
-for i, classTag in next, {'DRUID', 'HUNTER', 'MAGE' , 'PALADIN', 'PRIEST', 'ROGUE', 'SHAMAN', 'WARLOCK', 'WARRIOR', 'DEATHKNIGHT', 'MONK', 'DEMONHUNTER'} do
+for i, classTag in next, {'DRUID', 'HUNTER', 'MAGE', 'PALADIN', 'PRIEST', 'ROGUE', 'SHAMAN', 'WARLOCK', 'WARRIOR', 'DEATHKNIGHT', 'MONK', 'DEMONHUNTER', 'EVOKER'} do
 	P.unitframe.units.party['CLASS'..i] = classTag
 	for k = 1, 3 do
 		P.unitframe.units['raid'..k]['CLASS'..i] = classTag
@@ -2633,7 +2634,7 @@ for i = 1, 10 do
 	P.actionbar['bar'..i] = bar
 end
 
-if E.WoW10 then
+if E.Retail then
 	P.actionbar.bar13 = CopyTable(P.actionbar.bar1)
 	P.actionbar.bar14 = CopyTable(P.actionbar.bar1)
 	P.actionbar.bar15 = CopyTable(P.actionbar.bar1)
@@ -2672,20 +2673,12 @@ end
 P.actionbar.bar1.enabled = true
 P.actionbar.bar1.visibility = E.Retail and '[petbattle] hide; show' or 'show'
 
-if E.Wrath then
-	P.actionbar.bar1.paging.ROGUE = '[bonusbar:1] 7; [bonusbar:2] 8;'
-	P.actionbar.bar1.paging.WARLOCK = '[form:1] 7;'
-else
-	P.actionbar.bar1.paging.ROGUE = '[bonusbar:1] 7;'
-end
-
-if E.Retail then
-	P.actionbar.bar1.paging.DRUID = '[bonusbar:1,nostealth] 7; [bonusbar:1,stealth] 8; [bonusbar:2] 8; [bonusbar:3] 9; [bonusbar:4] 10;'
-else
-	P.actionbar.bar1.paging.DRUID = '[bonusbar:1,nostealth] 7; [bonusbar:1,stealth] 8; [bonusbar:2] 10; [bonusbar:3] 9; [bonusbar:4] 10;'
-	P.actionbar.bar1.paging.PRIEST = '[bonusbar:1] 7;'
-	P.actionbar.bar1.paging.WARRIOR = '[bonusbar:1] 7; [bonusbar:2] 8; [bonusbar:3] 9;'
-end
+P.actionbar.bar1.paging.ROGUE = '[bonusbar:1] 7;'..(E.Wrath and ' [bonusbar:2] 8;' or '')
+P.actionbar.bar1.paging.WARLOCK = E.Wrath and '[form:1] 7;' or nil
+P.actionbar.bar1.paging.DRUID = format('[bonusbar:1,nostealth] 7; [bonusbar:1,stealth] 8; [bonusbar:2] %d; [bonusbar:3] 9; [bonusbar:4] 10;', E.Retail and 10 or 8) -- No idea why tho
+P.actionbar.bar1.paging.EVOKER = '[bonusbar:1] 7;'
+P.actionbar.bar1.paging.PRIEST = '[bonusbar:1] 7;'
+P.actionbar.bar1.paging.WARRIOR = '[bonusbar:1] 7; [bonusbar:2] 8; [bonusbar:3] 9;'
 
 P.actionbar.bar3.enabled = true
 P.actionbar.bar3.buttons = 6

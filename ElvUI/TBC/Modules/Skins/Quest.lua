@@ -4,7 +4,7 @@ local S = E:GetModule('Skins')
 local _G = _G
 local unpack, gsub = unpack, gsub
 local select, pairs = select, pairs
-local strfind, strmatch = strfind, strmatch
+local next, strmatch = next, strmatch
 
 local GetMoney = GetMoney
 local GetItemInfo = GetItemInfo
@@ -67,9 +67,8 @@ local function handleItemButton(item)
 		item.CircleBackgroundGlow:SetAlpha(0)
 	end
 
-	for i = 1, item:GetNumRegions() do
-		local Region = select(i, item:GetRegions())
-		if Region and Region:IsObjectType('Texture') and Region:GetTexture() == [[Interface\Spellbook\Spellbook-Parts]] then
+	for _, Region in next, { item:GetRegions() } do
+		if Region:IsObjectType('Texture') and Region:GetTexture() == [[Interface\Spellbook\Spellbook-Parts]] then
 			Region:SetTexture('')
 		end
 	end

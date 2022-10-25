@@ -215,22 +215,7 @@ function AB:UpdateMicroButtons()
 		end
 	end
 
-	if E.Retail and not E.WoW10 then
-		AB:UpdateGuildMicroButton()
-	end
-
 	AB:UpdateMicroBarVisibility()
-end
-
-function AB:UpdateGuildMicroButton()
-	local btn = _G.GuildMicroButton
-	local tabard = _G.GuildMicroButtonTabard
-	tabard:SetInside(btn)
-	tabard.background:SetInside(btn)
-	tabard.background:SetTexCoord(0.17, 0.87, 0.5, 0.908)
-	tabard.emblem:ClearAllPoints()
-	tabard.emblem:Point('TOPLEFT', btn, 4, -4)
-	tabard.emblem:Point('BOTTOMRIGHT', btn, -4, 8)
 end
 
 function AB:SetupMicroBar()
@@ -260,6 +245,13 @@ function AB:SetupMicroBar()
 
 	if not E.Retail then
 		hooksecurefunc('SetLookingForGroupUIAvailable', AB.UpdateMicroButtons)
+	end
+
+	-- With this method we might don't taint anything. Instead of using :Kill()
+	local MenuPerformanceBar = _G.MainMenuBarPerformanceBar
+	if MenuPerformanceBar then
+		MenuPerformanceBar:SetAlpha(0)
+		MenuPerformanceBar:SetScale(0.00001)
 	end
 
 	if E.Wrath then

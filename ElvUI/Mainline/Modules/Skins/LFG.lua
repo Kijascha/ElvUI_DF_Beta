@@ -3,6 +3,7 @@ local S = E:GetModule('Skins')
 local LCG = E.Libs.CustomGlow
 
 local _G = _G
+local next = next
 local unpack, ipairs, pairs = unpack, ipairs, pairs
 local min, strlower, select = min, strlower, select
 
@@ -591,9 +592,8 @@ function S:LookingForGroupFrames()
 	end)
 
 	hooksecurefunc('LFGListSearchPanel_UpdateAutoComplete', function(panel)
-		for i = 1, LFGListFrame.SearchPanel.AutoCompleteFrame:GetNumChildren() do
-			local child = select(i, LFGListFrame.SearchPanel.AutoCompleteFrame:GetChildren())
-			if child and not child.isSkinned and child:IsObjectType('Button') then
+		for _, child in next, { LFGListFrame.SearchPanel.AutoCompleteFrame:GetChildren() } do
+			if not child.isSkinned and child:IsObjectType('Button') then
 				S:HandleButton(child)
 				child.isSkinned = true
 			end
@@ -730,7 +730,7 @@ function S:Blizzard_ChallengesUI()
 
 	hooksecurefunc(KeyStoneFrame, 'OnKeystoneSlotted', HandleAffixIcons)
 
-	local challengesFrameUpdate = function(frame)
+	hooksecurefunc(ChallengesFrame, 'Update', function(frame)
 		for _, child in ipairs(frame.DungeonIcons) do
 			if not child.template then
 				child:GetRegions():SetAlpha(0)

@@ -5,7 +5,7 @@ local ACD = E.Libs.AceConfigDialog
 local ACH = E.Libs.ACH
 
 local _G = _G
-local next, select, format, strmatch, strsplit = next, select, format, strmatch, strsplit
+local next, format, strmatch, strsplit = next, format, strmatch, strsplit
 local tinsert, tonumber, gsub, pairs, wipe, ceil = tinsert, tonumber, gsub, pairs, wipe, ceil
 
 local GetNumClasses = GetNumClasses
@@ -263,20 +263,17 @@ local function GetOptionsTable_Castbar(updateFunc, groupName, numUnits)
 		local frameName = gsub('ElvUF_'..E:StringTitle(groupName), 't(arget)', 'T%1')
 		if groupName == 'party' then
 			local header = UF.headers[groupName]
-			for i = 1, header:GetNumChildren() do
-				local group = select(i, header:GetChildren())
-				for j = 1, group:GetNumChildren() do
-					--Party unitbutton
-					local unitbutton = select(j, group:GetChildren())
+			for _, group in next, { header:GetChildren() } do
+				for _, unitbutton in next { group:GetChildren() } do
 					local castbar = unitbutton.Castbar
-					if not castbar.oldHide then
-						castbar.oldHide = castbar.Hide
-						castbar.Hide = castbar.Show
-						castbar:Show()
-					else
+					if castbar.oldHide then
 						castbar.Hide = castbar.oldHide
 						castbar.oldHide = nil
 						castbar:Hide()
+					else
+						castbar.oldHide = castbar.Hide
+						castbar.Hide = castbar.Show
+						castbar:Show()
 					end
 				end
 			end
@@ -420,11 +417,9 @@ local individual = {
 
 local function UpdateCustomTextGroup(unit)
 	if unit == 'party' or unit:find('raid') then
-		for i = 1, UF[unit]:GetNumChildren() do
-			local child = select(i, UF[unit]:GetChildren())
+		for _, child in next, { UF[unit]:GetChildren() } do
 
-			for x = 1, child:GetNumChildren() do
-				local subchild = select(x, child:GetChildren())
+			for _, subchild in next, { child:GetChildren() } do
 				UF:Configure_CustomTexts(subchild)
 				subchild:UpdateTags()
 			end

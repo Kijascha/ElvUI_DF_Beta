@@ -2,7 +2,8 @@ local E, L, V, P, G = unpack(ElvUI)
 local S = E:GetModule('Skins')
 
 local _G = _G
-local gsub, pairs, ipairs, select, unpack, strmatch, strfind = gsub, pairs, ipairs, select, unpack, strmatch, strfind
+local gsub, next, strmatch, strfind = gsub, next, strmatch, strfind
+local pairs, ipairs, unpack = pairs, ipairs, unpack
 
 local GetMoney = GetMoney
 local GetQuestID = GetQuestID
@@ -82,9 +83,8 @@ local function HandleReward(frame)
 		frame.CircleBackgroundGlow:SetAlpha(0)
 	end
 
-	for i = 1, frame:GetNumRegions() do
-		local Region = select(i, frame:GetRegions())
-		if Region and Region:IsObjectType('Texture') and Region:GetTexture() == [[Interface\Spellbook\Spellbook-Parts]] then
+	for _, Region in next, { frame:GetRegions() } do
+		if Region:IsObjectType('Texture') and Region:GetTexture() == [[Interface\Spellbook\Spellbook-Parts]] then
 			Region:SetTexture('')
 		end
 	end
@@ -183,14 +183,12 @@ function S:QuestInfoItem_OnClick() -- self is not S
 end
 
 function S:QuestLogQuests_Update() -- self is not S
-	for i = 1, _G.QuestMapFrame.QuestsFrame.Contents:GetNumChildren() do
-		local child = select(i, _G.QuestMapFrame.QuestsFrame.Contents:GetChildren())
-		if child and child.ButtonText and not child.questID then
+	for _, child in next, { _G.QuestMapFrame.QuestsFrame.Contents:GetChildren() } do
+		if child.ButtonText and not child.questID then
 			child:Size(16, 16)
 
-			for x = 1, child:GetNumRegions() do
-				local tex = select(x, child:GetRegions())
-				if tex and tex.GetAtlas then
+			for _, tex in next, { child:GetRegions() } do
+				if tex.GetAtlas then
 					local atlas = tex:GetAtlas()
 					if atlas == 'Campaign_HeaderIcon_Closed' or atlas == 'Campaign_HeaderIcon_ClosedPressed' then
 						tex:SetTexture(E.Media.Textures.PlusButton)

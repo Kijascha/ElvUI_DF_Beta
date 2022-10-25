@@ -178,8 +178,6 @@ end
 function M:ADDON_LOADED(_, addon)
 	if addon == 'Blizzard_TimeManager' then
 		_G.TimeManagerClockButton:Kill()
-	elseif addon == 'Blizzard_PTRFeedback' then
-		_G.PTR_IssueReporter:Kill()
 	elseif addon == 'Blizzard_HybridMinimap' then
 		M:SetupHybridMinimap()
 	elseif addon == 'Blizzard_EncounterJournal' then
@@ -217,7 +215,7 @@ function M:Minimap_OnMouseDown(btn)
 		end
 	elseif btn == 'RightButton' and M.TrackingDropdown then
 		_G.ToggleDropDownMenu(1, nil, M.TrackingDropdown, 'cursor')
-	elseif E.WoW10 then
+	elseif E.Retail then
 		Minimap.OnClick(self)
 	else
 		_G.Minimap_OnClick(self)
@@ -245,18 +243,13 @@ function M:MapCanvas_OnMouseDown(btn)
 end
 
 function M:Minimap_OnMouseWheel(d)
+	local zoomIn = E.Retail and Minimap.ZoomIn or _G.MinimapZoomIn
+	local zoomOut = E.Retail and Minimap.ZoomOut or _G.MinimapZoomOut
+
 	if d > 0 then
-		if E.WoW10 then
-			Minimap.ZoomIn:Click()
-		else
-			_G.MinimapZoomIn:Click()
-		end
+		zoomIn:Click()
 	elseif d < 0 then
-		if E.WoW10 then
-			Minimap.ZoomOut:Click()
-		else
-			_G.MinimapZoomOut:Click()
-		end
+		zoomOut:Click()
 	end
 end
 
@@ -291,8 +284,8 @@ do
 	local function ResetZoom()
 		Minimap:SetZoom(0)
 
-		local zoomIn = E.WoW10 and Minimap.ZoomIn or _G.MinimapZoomIn
-		local zoomOut = E.WoW10 and Minimap.ZoomOut or _G.MinimapZoomOut
+		local zoomIn = E.Retail and Minimap.ZoomIn or _G.MinimapZoomIn
+		local zoomOut = E.Retail and Minimap.ZoomOut or _G.MinimapZoomOut
 
 		zoomIn:Enable() -- Reset enabled state of buttons
 		zoomOut:Disable()
@@ -337,7 +330,7 @@ function M:UpdateSettings()
 	Minimap:Point('TOPRIGHT', holder, 'TOPRIGHT', -mmOffset/mmScale, -mmOffset/mmScale)
 	Minimap:Size(E.MinimapSize, E.MinimapSize)
 
-	if E.WoW10 then
+	if E.Retail then
 		local offset = 1
 		MinimapCluster:ClearAllPoints()
 
@@ -376,7 +369,7 @@ function M:UpdateSettings()
 
 	_G.MiniMapMailIcon:SetTexture(E.Media.MailIcons[E.db.general.minimap.icons.mail.texture] or E.Media.MailIcons.Mail3)
 
-	if E.WoW10 then
+	if E.Retail then
 		_G.MinimapZoneText:FontTemplate(locationFont, locaitonSize, locationOutline)
 		_G.TimeManagerClockTicker:FontTemplate(LSM:Fetch('font', E.db.general.minimap.timeFont), E.db.general.minimap.timeFontSize, E.db.general.minimap.timeFontOutline)
 
@@ -395,7 +388,7 @@ function M:UpdateSettings()
 		end
 	end
 
-	local difficulty = E.WoW10 and MinimapCluster.InstanceDifficulty
+	local difficulty = E.Retail and MinimapCluster.InstanceDifficulty
 	local instance = difficulty and difficulty.Instance or _G.MiniMapInstanceDifficulty
 	local guild = difficulty and difficulty.Guild or _G.GuildInstanceDifficulty
 	local challenge = difficulty and difficulty.ChallengeMode or _G.MiniMapChallengeMode
@@ -614,7 +607,7 @@ function M:Initialize()
 	local minimapLevel = Minimap:GetFrameLevel() + 2
 	Minimap:SetFrameLevel(minimapLevel)
 
-	if E.WoW10 then
+	if E.Retail then
 		MinimapCluster:SetFrameLevel(minimapLevel)
 		MinimapCluster:SetFrameStrata('MEDIUM')
 		Minimap:SetFrameStrata('LOW')
@@ -626,7 +619,7 @@ function M:Initialize()
 		M:SetScale(Minimap.backdrop, 1)
 	end
 
-	if E.WoW10 then
+	if E.Retail then
 		local clusterHolder = CreateFrame('Frame', 'ElvUI_MinimapClusterHolder', MinimapCluster)
 		clusterHolder:Point('TOPRIGHT', E.UIParent, 'TOPRIGHT', -3, -3)
 
@@ -638,8 +631,6 @@ function M:Initialize()
 		M:SetScale(clusterBackdrop, 1)
 		M.ClusterBackdrop = clusterBackdrop
 	end
-
-	MinimapCluster:EnableMouse(false)
 
 	Minimap:HookScript('OnEnter', function(mm) if E.db.general.minimap.locationText == 'MOUSEOVER' and E.db.general.minimap.clusterDisable then mm.location:Show() end end)
 	Minimap:HookScript('OnLeave', function(mm) if E.db.general.minimap.locationText == 'MOUSEOVER' and E.db.general.minimap.clusterDisable then mm.location:Hide() end end)
@@ -668,7 +659,7 @@ function M:Initialize()
 		E.Retail and _G.MiniMapTracking or _G.MinimapToggleButton
 	}
 
-	if E.WoW10 then
+	if E.Retail then
 		tinsert(killFrames, Minimap.ZoomIn)
 		tinsert(killFrames, Minimap.ZoomOut)
 		tinsert(killFrames, _G.MinimapCompassTexture)
@@ -677,12 +668,16 @@ function M:Initialize()
 		MinimapCluster.Tracking.Background:StripTextures()
 	end
 
-	if E.Wrath then
+	if _G.TimeManagerClockButton then
 		tinsert(killFrames, _G.TimeManagerClockButton)
 	end
 
 	for _, frame in next, killFrames do
 		frame:Kill()
+	end
+
+	if _G.HybridMinimap then
+		M:SetupHybridMinimap()
 	end
 
 	if E.Retail then
@@ -721,9 +716,7 @@ function M:Initialize()
 		(E.Wrath and _G.MiniMapLFGFrameBorder or _G.MiniMapLFGBorder):Hide()
 	end
 
-	if _G.FeedbackUIButton then _G.FeedbackUIButton:Kill() end
-	if _G.HybridMinimap then M:SetupHybridMinimap() end
-
+	MinimapCluster:EnableMouse(false)
 	Minimap:EnableMouseWheel(true)
 	Minimap:SetScript('OnMouseWheel', M.Minimap_OnMouseWheel)
 	Minimap:SetScript('OnMouseDown', M.Minimap_OnMouseDown)

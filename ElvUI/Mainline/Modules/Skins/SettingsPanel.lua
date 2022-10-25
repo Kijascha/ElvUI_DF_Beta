@@ -2,7 +2,7 @@ local E, L, V, P, G = unpack(ElvUI)
 local S = E:GetModule('Skins')
 
 local _G = _G
-local pairs, select = pairs, select
+local next = next
 local hooksecurefunc = hooksecurefunc
 
 local function HandleTabs(tab)
@@ -34,7 +34,6 @@ local function ReskinOptionDropDown(option)
 	ReskinDropDownArrow(option.DecrementButton, 'left')
 	ReskinDropDownArrow(option.IncrementButton, 'right')
 end
-
 
 local function UpdateKeybindButtons(self)
 	if not self.bindingsPool then return end
@@ -74,8 +73,7 @@ function S:SettingsPanel()
 	SettingsPanel.CategoryList.backdrop:SetInside()
 
 	hooksecurefunc(SettingsPanel.CategoryList.ScrollBox, 'Update', function(frame)
-		for i = 1, frame.ScrollTarget:GetNumChildren() do
-			local child = select(i, frame.ScrollTarget:GetChildren())
+		for _, child in next, { frame.ScrollTarget:GetChildren() } do
 			if not child.isSkinned then
 				if child.Background then
 					child.Background:SetAlpha(0)
@@ -100,8 +98,7 @@ function S:SettingsPanel()
 	S:HandleTrimScrollBar(SettingsPanel.Container.SettingsList.ScrollBar)
 
 	hooksecurefunc(SettingsPanel.Container.SettingsList.ScrollBox, 'Update', function(frame)
-		for i = 1, frame.ScrollTarget:GetNumChildren() do
-			local child = select(i, frame.ScrollTarget:GetChildren())
+		for _, child in next, { frame.ScrollTarget:GetChildren() } do
 			if not child.isSkinned then
 				if child.CheckBox then
 					S:HandleCheckBox(child.CheckBox)
@@ -171,9 +168,8 @@ function S:SettingsPanel()
 		end
 	end)
 
-	for _, frame in pairs({_G.CompactUnitFrameProfiles, _G.CompactUnitFrameProfilesGeneralOptionsFrame}) do
-		for i = 1, frame:GetNumChildren() do
-			local child = select(i, frame:GetChildren())
+	for _, frame in next, { _G.CompactUnitFrameProfiles, _G.CompactUnitFrameProfilesGeneralOptionsFrame } do
+		for _, child in next, { frame:GetChildren() } do
 			if child:IsObjectType('CheckButton') then
 				S:HandleCheckBox(child)
 			elseif child:IsObjectType('Button') then
