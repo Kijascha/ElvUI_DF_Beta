@@ -374,7 +374,7 @@ function S:SkinTalentListButtons(frame)
 end
 
 do
-	local function iconBorderColor(border, r, g, b, a)
+	local function borderVertex(border, r, g, b, a)
 		border:StripTextures()
 
 		if border.customFunc then
@@ -385,13 +385,19 @@ do
 		end
 	end
 
-	local function iconBorderHide(border)
+	local function borderHide(border)
 		local br, bg, bb = unpack(E.media.bordercolor)
 		if border.customFunc then
 			local r, g, b, a = border:GetVertexColor()
 			border.customFunc(border, r, g, b, a, br, bg, bb)
 		elseif border.customBackdrop then
 			border.customBackdrop:SetBackdropBorderColor(br, bg, bb)
+		end
+	end
+
+	local function borderShown(border, show)
+		if not show then
+			borderHide(border)
 		end
 	end
 
@@ -406,8 +412,9 @@ do
 		if not border.IconBorderHooked then
 			border:StripTextures()
 
-			hooksecurefunc(border, 'SetVertexColor', iconBorderColor)
-			hooksecurefunc(border, 'Hide', iconBorderHide)
+			hooksecurefunc(border, 'SetVertexColor', borderVertex)
+			hooksecurefunc(border, 'SetShown', borderShown)
+			hooksecurefunc(border, 'Hide', borderHide)
 
 			border.IconBorderHooked = true
 		end
@@ -417,7 +424,7 @@ do
 			border.customFunc = customFunc
 			local br, bg, bb = unpack(E.media.bordercolor)
 			customFunc(border, r, g, b, a, br, bg, bb)
-		elseif r and (r ~= 1 and g ~= 1 and b ~= 1) then -- might need to account for the actual common, uncommon colors
+		elseif r then
 			backdrop:SetBackdropBorderColor(r, g, b, a)
 		else
 			local br, bg, bb = unpack(E.media.bordercolor)
@@ -1547,7 +1554,7 @@ do
 					handleButton(button, i, buttonNameTemplate)
 				end
 			end
-		else -- WoW10
+		else
 			S:HandleTrimScrollBar(frame.IconSelector.ScrollBar)
 
 			for _, button in next, { frame.IconSelector.ScrollBox.ScrollTarget:GetChildren() } do

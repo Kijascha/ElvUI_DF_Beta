@@ -2,7 +2,7 @@ local E, L, V, P, G = unpack(ElvUI)
 local AB = E:GetModule('ActionBars')
 
 local _G = _G
-local ipairs, pairs, select, strmatch, next, unpack = ipairs, pairs, select, strmatch, next, unpack
+local ipairs, pairs, strmatch, next, unpack = ipairs, pairs, strmatch, next, unpack
 local format, gsub, strsplit, strfind, strupper, tremove = format, gsub, strsplit, strfind, strupper, tremove
 
 local ClearOnBarHighlightMarks = ClearOnBarHighlightMarks
@@ -1006,10 +1006,7 @@ function AB:DisableBlizzard()
 		if frame then
 			if i < count then frame:UnregisterAllEvents() end
 			frame:SetParent(E.HiddenFrame)
-
-			if not E.Retail then -- WoW10 this breaks the UseContainerItem
-				AB:SetNoopsi(frame)
-			end
+			AB:SetNoopsi(frame)
 		end
 	end
 
@@ -1296,7 +1293,7 @@ function AB:SetupFlyoutButton(button)
 	end
 
 	if E.Retail then
-		_G.SpellFlyout.Background:Hide() -- ToDO: WoW10
+		_G.SpellFlyout.Background:Hide()
 	end
 end
 

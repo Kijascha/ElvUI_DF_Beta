@@ -149,7 +149,7 @@ function S:Blizzard_Communities()
 				child.backdrop:Point('TOPLEFT', 5, -5)
 				child.backdrop:Point('BOTTOMRIGHT', -10, 5)
 
-				child:SetHighlightTexture('') -- ToDO: WoW10
+				child:SetHighlightTexture(E.ClearTexture)
 				child.IconRing:SetAlpha(0)
 				child.Background:Hide()
 				child.Selection:Hide()
@@ -176,7 +176,7 @@ function S:Blizzard_Communities()
 	S:HandleMaxMinFrame(CommunitiesFrame.MaximizeMinimizeFrame)
 
 	S:HandleButton(CommunitiesFrame.InviteButton)
-	S:HandleNextPrevButton(CommunitiesFrame.AddToChatButton) -- ToDo: WoW10
+	S:HandleNextPrevButton(CommunitiesFrame.AddToChatButton)
 
 	S:HandleDropDownBox(CommunitiesFrame.CommunitiesListDropDownMenu)
 
@@ -400,7 +400,7 @@ function S:Blizzard_Communities()
 			button.Icon:SetTexCoord(unpack(E.TexCoords))
 			button.Icon:CreateBackdrop()
 		end
-	end]] -- WoW10
+	end
 
 	hooksecurefunc('CommunitiesGuildRewards_Update', function()
 		for _, button in pairs(CommunitiesFrame.GuildBenefitsFrame.Rewards.RewardsContainer.buttons) do
@@ -415,7 +415,7 @@ function S:Blizzard_Communities()
 				end
 			end
 		end
-	end)
+	end)]] -- WoW10
 
 	-- Guild Reputation Bar TO DO: Adjust me!
 	local StatusBar = CommunitiesFrame.GuildBenefitsFrame.FactionFrame.Bar
@@ -671,7 +671,7 @@ function S:Blizzard_Communities()
 			end
 		end
 
-		local buttons = list.ListScrollFrame.buttons
+		--[[local buttons = list.ListScrollFrame.buttons
 		for i = 1, #buttons do
 			local button = buttons[i]
 			if not button.IsSkinned then
@@ -690,7 +690,7 @@ function S:Blizzard_Communities()
 
 				button.IsSkinned = true
 			end
-		end
+		end]] -- WoW10
 	end)
 end
 

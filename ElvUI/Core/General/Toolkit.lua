@@ -3,10 +3,11 @@ local UF = E:GetModule('UnitFrames')
 local NP = E:GetModule('NamePlates')
 
 local _G = _G
-local pairs, pcall, strmatch = pairs, pcall, strmatch
-local unpack, type, select, getmetatable = unpack, type, select, getmetatable
-local EnumerateFrames = EnumerateFrames
+local pairs, pcall, unpack, type, next = pairs, pcall, unpack, type, next
 local hooksecurefunc = hooksecurefunc
+local getmetatable = getmetatable
+
+local EnumerateFrames = EnumerateFrames
 local CreateFrame = CreateFrame
 
 local backdropr, backdropg, backdropb, backdropa = 0, 0, 0, 1
@@ -356,8 +357,8 @@ local function FontTemplate(fs, font, size, style, skip)
 		fs.font, fs.fontSize, fs.fontStyle = font, size, style
 	end
 
-	-- shadow mode when using ''
-	if style == '' then
+	-- shadow mode when using 'NONE'
+	if style == 'NONE' then
 		fs:SetShadowOffset(1, -0.5)
 		fs:SetShadowColor(0, 0, 0, 1)
 	else
