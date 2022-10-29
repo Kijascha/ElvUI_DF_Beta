@@ -51,11 +51,6 @@ local ToggleFrame = ToggleFrame
 local UnitAffectingCombat = UnitAffectingCombat
 local UseContainerItem = UseContainerItem
 
-local GetBagSlotFlag = GetBagSlotFlag or (C_Container and C_Container.GetBagSlotFlag)
-local SetBagSlotFlag = SetBagSlotFlag or (C_Container and C_Container.SetBagSlotFlag)
-local GetBankBagSlotFlag = GetBankBagSlotFlag or (C_Container and C_Container.GetBankBagSlotFlag)
-local SetBankBagSlotFlag = SetBankBagSlotFlag or (C_Container and C_Container.SetBankBagSlotFlag)
-
 local IsBagOpen, IsOptionFrameOpen = IsBagOpen, IsOptionFrameOpen
 local IsShiftKeyDown, IsControlKeyDown = IsShiftKeyDown, IsControlKeyDown
 local CloseBag, CloseBackpack, CloseBankFrame = CloseBag, CloseBackpack, CloseBankFrame
@@ -70,6 +65,19 @@ local C_Item_GetCurrentItemLevel = C_Item.GetCurrentItemLevel
 local C_NewItems_IsNewItem = C_NewItems.IsNewItem
 local C_NewItems_RemoveNewItem = C_NewItems.RemoveNewItem
 local C_Item_IsBound = C_Item.IsBound
+
+local GetBagSlotFlag = GetBagSlotFlag or (C_Container and C_Container.GetBagSlotFlag)
+local SetBagSlotFlag = SetBagSlotFlag or (C_Container and C_Container.SetBagSlotFlag)
+local GetBankBagSlotFlag = GetBankBagSlotFlag or (C_Container and C_Container.GetBankBagSlotFlag)
+local SetBankBagSlotFlag = SetBankBagSlotFlag or (C_Container and C_Container.SetBankBagSlotFlag)
+local ContainerIDToInventoryID = ContainerIDToInventoryID or (C_Container and C_Container.ContainerIDToInventoryID)
+local GetBackpackAutosortDisabled = GetBackpackAutosortDisabled or (C_Container and C_Container.GetBackpackAutosortDisabled)
+local GetBankAutosortDisabled = GetBankAutosortDisabled or (C_Container and C_Container.GetBankAutosortDisabled)
+local GetContainerItemCooldown = GetContainerItemCooldown or (C_Container and C_Container.GetContainerItemCooldown)
+local GetContainerNumFreeSlots = GetContainerNumFreeSlots or (C_Container and C_Container.GetContainerNumFreeSlots)
+local GetContainerNumSlots = GetContainerNumSlots or (C_Container and C_Container.GetContainerNumSlots)
+local SetBackpackAutosortDisabled = SetBackpackAutosortDisabled or (C_Container and C_Container.SetBackpackAutosortDisabled)
+local SetInsertItemsLeftToRight = SetInsertItemsLeftToRight or (C_Container and C_Container.SetInsertItemsLeftToRight)
 
 local CONTAINER_OFFSET_X, CONTAINER_OFFSET_Y = CONTAINER_OFFSET_X, CONTAINER_OFFSET_Y
 local IG_BACKPACK_CLOSE = SOUNDKIT.IG_BACKPACK_CLOSE
@@ -113,51 +121,38 @@ if E.Retail then
 	tinsert(B.GearFilters, BagSlotFlags.PriorityQuestItems)
 end
 
-local ContainerIDToInventoryID = ContainerIDToInventoryID
-local GetBackpackAutosortDisabled = GetBackpackAutosortDisabled
-local GetBankAutosortDisabled = GetBankAutosortDisabled
-local GetContainerItemCooldown = GetContainerItemCooldown
-local GetContainerNumFreeSlots = GetContainerNumFreeSlots
-local GetContainerNumSlots = GetContainerNumSlots
-local SetBackpackAutosortDisabled = SetBackpackAutosortDisabled
-local SetInsertItemsLeftToRight = SetInsertItemsLeftToRight
-
--- converted below
-local GetContainerItemInfo
-local GetBackpackCurrencyInfo
-local GetContainerItemQuestInfo
-
 do
-	local container = E.wowtoc >= 100002 and C_Container -- WoW 10.0.2
-	if container then
-		GetBackpackCurrencyInfo = C_CurrencyInfo.GetBackpackCurrencyInfo
-		ContainerIDToInventoryID = container.ContainerIDToInventoryID
-		GetBackpackAutosortDisabled = container.GetBackpackAutosortDisabled
-		GetBankAutosortDisabled = container.GetBankAutosortDisabled
-		GetContainerItemCooldown = container.GetContainerItemCooldown
-		GetContainerItemInfo = container.GetContainerItemInfo
-		GetContainerItemQuestInfo = container.GetContainerItemQuestInfo
-		GetContainerNumFreeSlots = container.GetContainerNumFreeSlots
-		GetContainerNumSlots = container.GetContainerNumSlots
-		SetBackpackAutosortDisabled = container.SetBackpackAutosortDisabled
-		SetInsertItemsLeftToRight = container.SetInsertItemsLeftToRight
-	else -- localised above
-		GetBackpackCurrencyInfo = function(index)
-			local info = {}
-			info.name, info.quantity, info.iconFileID, info.currencyTypesID = _G.GetBackpackCurrencyInfo(index)
-			return info
-		end
+	local GetContainerItemInfo = GetContainerItemInfo or (C_Container and C_Container.GetContainerItemInfo)
+	local GetContainerItemQuestInfo = GetContainerItemQuestInfo or (C_Container and C_Container.GetContainerItemQuestInfo)
+	local GetBackpackCurrencyInfo = GetBackpackCurrencyInfo or (C_CurrencyInfo and C_CurrencyInfo.GetBackpackCurrencyInfo)
 
-		GetContainerItemInfo = function(containerIndex, slotIndex)
+	function B:GetBackpackCurrencyInfo(index)
+		if _G.GetBackpackCurrencyInfo then
 			local info = {}
-			info.iconFileID, info.stackCount, info.isLocked, info.quality, info.isReadable, info.hasLoot, info.hyperlink, info.isFiltered, info.hasNoValue, info.itemID, info.isBound = _G.GetContainerItemInfo(containerIndex, slotIndex)
+			info.name, info.quantity, info.iconFileID, info.currencyTypesID = GetBackpackCurrencyInfo(index)
 			return info
+		else
+			return GetBackpackCurrencyInfo(index)
 		end
+	end
 
-		GetContainerItemQuestInfo = function(containerIndex, slotIndex)
+	function B:GetContainerItemInfo(containerIndex, slotIndex)
+		if _G.GetContainerItemInfo then
 			local info = {}
-			info.isQuestItem, info.questID, info.isActive = _G.GetContainerItemQuestInfo(containerIndex, slotIndex)
+			info.iconFileID, info.stackCount, info.isLocked, info.quality, info.isReadable, info.hasLoot, info.hyperlink, info.isFiltered, info.hasNoValue, info.itemID, info.isBound = GetContainerItemInfo(containerIndex, slotIndex)
 			return info
+		else
+			return GetContainerItemInfo(containerIndex, slotIndex)
+		end
+	end
+
+	function B:GetContainerItemQuestInfo(containerIndex, slotIndex)
+		if _G.GetContainerItemQuestInfo then
+			local info = {}
+			info.isQuestItem, info.questID, info.isActive = GetContainerItemQuestInfo(containerIndex, slotIndex)
+			return info
+		else
+			return GetContainerItemQuestInfo(containerIndex, slotIndex)
 		end
 	end
 end
@@ -302,13 +297,14 @@ end
 
 do
 	local function DisableFrame(frame)
-		if frame then
-			frame:UnregisterAllEvents()
-			frame:SetScript('OnShow', nil)
-			frame:SetScript('OnHide', nil)
-			frame:SetScale(0.0001)
-			frame:SetAlpha(0)
-		end
+		if not frame then return end
+
+		frame:UnregisterAllEvents()
+		frame:SetScript('OnShow', nil)
+		frame:SetScript('OnHide', nil)
+		frame:SetParent(E.HiddenFrame)
+		frame:ClearAllPoints()
+		frame:Point('BOTTOM')
 	end
 
 	function B:DisableBlizzard()
@@ -639,9 +635,7 @@ function B:UpdateSlot(frame, bagID, slotID)
 	if not slot then return end
 
 	local keyring = not E.Retail and (bagID == KEYRING_CONTAINER)
-	local info = GetContainerItemInfo(bagID, slotID) or {}
-
---	info.iconFileID, info.stackCount, info.isLocked, info.quality, info.isReadable, info.hasLoot, info.hyperlink, info.isFiltered, info.hasNoValue, info.itemID, info.isBound
+	local info = B:GetContainerItemInfo(bagID, slotID) or {}
 
 	slot.name, slot.spellID, slot.itemID, slot.rarity, slot.locked, slot.readable, slot.itemLink = nil, nil, info.itemID, info.quality, info.isLocked, info.isReadable, info.hyperlink
 	slot.isJunk = (slot.rarity and slot.rarity == ITEMQUALITY_POOR) and not info.hasNoValue
@@ -671,7 +665,7 @@ function B:UpdateSlot(frame, bagID, slotID)
 		slot.name, slot.spellID, slot.isEquipment, slot.itemEquipLoc, slot.itemClassID, slot.itemSubClassID = name, spellID, B.IsEquipmentSlot[itemEquipLoc], itemEquipLoc, itemClassID, itemSubClassID
 
 		if E.Retail then
-			local questInfo = GetContainerItemQuestInfo(bagID, slotID)
+			local questInfo = B:GetContainerItemQuestInfo(bagID, slotID)
 			isQuestItem, questId, isActiveQuest = questInfo.isQuestItem, questInfo.questID, questInfo.isActive
 		else
 			slot.isBound = C_Item_IsBound(slot.itemLocation)
@@ -1254,20 +1248,22 @@ function B:OnEvent(event, ...)
 end
 
 function B:UpdateTokens()
-	local f = B.BagFrame
-	local numTokens = 0
-
-	for _, button in ipairs(f.currencyButton) do
+	local bagFrame = B.BagFrame
+	local currencies = bagFrame.currencyButton
+	for _, button in ipairs(currencies) do
 		button:Hide()
 	end
 
+	local numTokens = 0
 	for i = 1, MAX_WATCHED_TOKENS do
-		local info = GetBackpackCurrencyInfo(i)
+		local info = B:GetBackpackCurrencyInfo(i)
 		if not (info and info.name) then break end
 
-		local button = f.currencyButton[i]
+		local button = currencies[i]
 		button:ClearAllPoints()
-		button.icon:SetTexture(info.iconFileID)
+
+		local icon = button.icon or button.Icon
+		icon:SetTexture(info.iconFileID)
 
 		if B.db.currencyFormat == 'ICON_TEXT' then
 			button.text:SetText(info.name..': '..BreakUpLargeNumbers(info.quantity))
@@ -1284,25 +1280,26 @@ function B:UpdateTokens()
 	end
 
 	if numTokens == 0 then
-		if f.bottomOffset > 8 then
-			f.bottomOffset = 8
+		if bagFrame.bottomOffset > 8 then
+			bagFrame.bottomOffset = 8
 			B:Layout()
 		end
 	else
-		if f.bottomOffset < 28 then
-			f.bottomOffset = 28
+		if bagFrame.bottomOffset < 28 then
+			bagFrame.bottomOffset = 28
 			B:Layout()
 		end
 
+		local c1, c2, c3 = unpack(currencies)
 		if numTokens == 1 then
-			f.currencyButton[1]:Point('BOTTOM', f.currencyButton, 'BOTTOM', -(f.currencyButton[1].text:GetWidth() * 0.5), 3)
+			c1:Point('BOTTOM', currencies, -c1.text:GetWidth() * 0.5, 3)
 		elseif numTokens == 2 then
-			f.currencyButton[1]:Point('BOTTOM', f.currencyButton, 'BOTTOM', -(f.currencyButton[1].text:GetWidth()) - (f.currencyButton[1]:GetWidth() * 0.5), 3)
-			f.currencyButton[2]:Point('BOTTOMLEFT', f.currencyButton, 'BOTTOM', f.currencyButton[2]:GetWidth() * 0.5, 3)
+			c1:Point('BOTTOM', currencies, -c1.text:GetWidth() - (c1:GetWidth() * 3), 3)
+			c2:Point('BOTTOMLEFT', currencies, 'BOTTOM', c2:GetWidth() * 3, 3)
 		else
-			f.currencyButton[1]:Point('BOTTOMLEFT', f.currencyButton, 'BOTTOMLEFT', 3, 3)
-			f.currencyButton[2]:Point('BOTTOM', f.currencyButton, 'BOTTOM', -(f.currencyButton[2].text:GetWidth() / 3), 3)
-			f.currencyButton[3]:Point('BOTTOMRIGHT', f.currencyButton, 'BOTTOMRIGHT', -(f.currencyButton[3].text:GetWidth()) - (f.currencyButton[3]:GetWidth() * 0.5), 3)
+			c1:Point('BOTTOMLEFT', currencies, 3, 3)
+			c2:Point('BOTTOM', currencies, -c2.text:GetWidth() / 3, 3)
+			c3:Point('BOTTOMRIGHT', currencies, -c3.text:GetWidth() - (c3:GetWidth() * 0.5), 3)
 		end
 	end
 end
@@ -1334,7 +1331,7 @@ function B:GetGrays(vendor)
 
 	for bagID = 0, 4 do
 		for slotID = 1, B:GetContainerNumSlots(bagID) do
-			local info = GetContainerItemInfo(bagID, slotID)
+			local info = B:GetContainerItemInfo(bagID, slotID)
 			local itemLink = info and info.hyperlink
 			if itemLink and not info.hasNoValue and not B.ExcludeGrays[info.itemID] then
 				local _, _, rarity, _, _, _, _, _, _, _, itemPrice, classID, _, bindType = GetItemInfo(itemLink)
@@ -1929,7 +1926,7 @@ function B:ConstructContainerButton(f, bagID, slotID)
 
 	slot.bagFrame = f
 	slot.BagID = bagID
-	slot.SlotID = slotID -- dont use `slotID` it taints since WoW10 in ContainerFrameItemButtonMixin:GetBagID()
+	slot.SlotID = slotID -- dont use `slotID` it taints since DF prepatch in ContainerFrameItemButtonMixin:GetBagID()
 	slot.name = slotName
 
 	local newItemTexture = _G[slotName..'NewItemTexture']
@@ -1996,9 +1993,8 @@ function B:ConstructContainerButton(f, bagID, slotID)
 	end
 
 	slot.Cooldown = _G[slotName..'Cooldown']
-	slot.Cooldown.CooldownOverride = 'bags'
 	slot.Cooldown:HookScript('OnHide', B.Cooldown_OnHide)
-	E:RegisterCooldown(slot.Cooldown)
+	E:RegisterCooldown(slot.Cooldown, 'bags')
 
 	slot.icon:SetInside()
 	slot.icon:SetTexCoord(unpack(E.TexCoords))
@@ -2142,6 +2138,7 @@ function B:OpenBags()
 	end
 
 	B.BagFrame:Show()
+
 	PlaySound(IG_BACKPACK_OPEN)
 
 	TT:GameTooltip_SetDefaultAnchor(GameTooltip)
@@ -2241,6 +2238,11 @@ function B:OpenBank()
 
 	if B.BankFrame.firstOpen then
 		B:UpdateAllSlots(B.BankFrame)
+
+		if E.Retail then
+			B:UpdateBagSlots(B.BankFrame, REAGENTBANK_CONTAINER)
+		end
+
 		B.BankFrame.firstOpen = nil
 	elseif next(B.BankFrame.staleBags) then
 		for bagID, bag in next, B.BankFrame.staleBags do
@@ -2756,14 +2758,13 @@ function B:Initialize()
 
 	if E.Wrath then
 		B:SecureHook('BackpackTokenFrame_Update', 'UpdateTokens')
+	else
+		B:SecureHook(_G.BackpackTokenFrame, 'Update', 'UpdateTokens')
 	end
 
 	if E.Retail then
 		B:RegisterEvent('PLAYER_AVG_ITEM_LEVEL_UPDATE')
-
 		B.BankFrame:RegisterEvent('PLAYERREAGENTBANKSLOTS_CHANGED') -- let reagent collect data for next open
-		-- Delay because we need to wait for Quality to exist, it doesnt seem to on login at PEW
-		E:Delay(1, B.UpdateBagSlots, B, B.BankFrame, REAGENTBANK_CONTAINER)
 	end
 
 	B:SecureHook('OpenAllBags')

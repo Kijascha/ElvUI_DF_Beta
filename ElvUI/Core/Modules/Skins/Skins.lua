@@ -179,23 +179,26 @@ function S:HandleInsetFrame(frame)
 end
 
 -- All frames that have a Portrait
-function S:HandlePortraitFrame(frame, createBackdrop)
+function S:HandlePortraitFrame(frame, createBackdrop, noStrip)
 	assert(frame, 'doesnt exist!')
 
 	local name = frame and frame.GetName and frame:GetName()
+
 	local insetFrame = name and _G[name..'Inset'] or frame.Inset
 	local portraitFrame = name and _G[name..'Portrait'] or frame.Portrait or frame.portrait
 	local portraitFrameOverlay = name and _G[name..'PortraitOverlay'] or frame.PortraitOverlay
 	local artFrameOverlay = name and _G[name..'ArtOverlayFrame'] or frame.ArtOverlayFrame
 
-	frame:StripTextures()
+	if not noStrip then
+		frame:StripTextures()
 
-	if portraitFrame then portraitFrame:SetAlpha(0) end
-	if portraitFrameOverlay then portraitFrameOverlay:SetAlpha(0) end
-	if artFrameOverlay then artFrameOverlay:SetAlpha(0) end
+		if portraitFrame then portraitFrame:SetAlpha(0) end
+		if portraitFrameOverlay then portraitFrameOverlay:SetAlpha(0) end
+		if artFrameOverlay then artFrameOverlay:SetAlpha(0) end
 
-	if insetFrame then
-		S:HandleInsetFrame(insetFrame)
+		if insetFrame then
+			S:HandleInsetFrame(insetFrame)
+		end
 	end
 
 	if frame.CloseButton then
@@ -1163,7 +1166,7 @@ function S:HandleSliderFrame(frame, template, frameLevel)
 	end
 end
 
--- ToDO: WoW10 => UpdateME => Credits: NDUI
+-- ToDO: DF => UpdateME => Credits: NDUI
 local sparkTexture = [[Interface\CastingBar\UI-CastingBar-Spark]]
 function S:HandleStepSlider(frame, minimal)
 	assert(frame, 'doesnt exist!')
@@ -1341,7 +1344,7 @@ do
 
 				local quality = portrait.quality or (follower.info and follower.info.quality)
 				local color = portrait.backdrop and ITEM_QUALITY_COLORS[quality]
-				if color then -- sometimes it doesn't have this data since WoW10
+				if color then -- sometimes it doesn't have this data since DF
 					portrait.backdrop:SetBackdropBorderColor(color.r, color.g, color.b)
 				end
 			end
@@ -1389,7 +1392,7 @@ do
 		if _G.GarrisonFollowerList_InitButton then
 			hooksecurefunc(_G, 'GarrisonFollowerList_InitButton', UpdateFollower)
 		else
-			hooksecurefunc(_G[frame], 'UpdateData', UpdateListScroll) -- pre WoW10
+			hooksecurefunc(_G[frame], 'UpdateData', UpdateListScroll) -- pre DF
 		end
 	end
 end
@@ -1494,12 +1497,12 @@ do
 		end
 	end
 
-	function S:HandleIconSelectionFrame(frame, numIcons, buttonNameTemplate, frameNameOverride, dontOffset)
+	function S:HandleIconSelectionFrame(frame, numIcons, buttonNameTemplate, nameOverride, dontOffset)
 		assert(frame, 'HandleIconSelectionFrame: frame argument missing')
 
 		if frame.isSkinned then
 			return
-		elseif frameNameOverride and frameNameOverride ~= 'MacroPopup' then -- skip macros because it skins on show
+		elseif not E.Retail and (nameOverride and nameOverride ~= 'MacroPopup') then -- skip macros because it skins on show
 			frame:Show() -- spawn the info so we can skin the buttons
 			if frame.Update then frame:Update() end -- guild bank popup has update function
 			frame:Hide() -- can hide it right away
@@ -1510,7 +1513,7 @@ do
 		end
 
 		local borderBox = frame.BorderBox or _G.BorderBox -- it's a sub frame only on retail, on wrath it's a global?
-		local frameName = frameNameOverride or frame:GetName() -- we need override in case Blizzard fucks up the naming (guild bank)
+		local frameName = nameOverride or frame:GetName() -- we need override in case Blizzard fucks up the naming (guild bank)
 		local scrollFrame = frame.ScrollFrame or _G[frameName..'ScrollFrame']
 		local editBox = (borderBox and borderBox.IconSelectorEditBox) or frame.EditBox or _G[frameName..'EditBox']
 		local cancel = frame.CancelButton or (borderBox and borderBox.CancelButton) or _G[frameName..'Cancel']
