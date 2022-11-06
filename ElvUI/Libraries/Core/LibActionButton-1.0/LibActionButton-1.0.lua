@@ -44,7 +44,6 @@ local WoWRetail = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE)
 local WoWClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC)
 local WoWBCC = (WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC)
 local WoWWrath = (WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC)
-local WoW10 = select(4, GetBuildInfo()) >= 100000
 
 local CBH = LibStub("CallbackHandler-1.0")
 local LCG = LibStub("LibCustomGlow-1.0", true)
@@ -169,12 +168,7 @@ function lib:CreateButton(id, name, header, config)
 
 	local button = setmetatable(CreateFrame("CheckButton", name, header, "SecureActionButtonTemplate, ActionButtonTemplate"), Generic_MT)
 	button:RegisterForDrag("LeftButton", "RightButton")
-
-	if WoW10 then
-		button:RegisterForClicks("AnyDown", "AnyUp")
-	else
-		button:RegisterForClicks("AnyUp")
-	end
+	button:RegisterForClicks("AnyUp")
 
 	button.cooldown:SetFrameStrata(button:GetFrameStrata())
 	button.cooldown:SetFrameLevel(button:GetFrameLevel() + 1)
@@ -182,6 +176,7 @@ function lib:CreateButton(id, name, header, config)
 	local AuraCooldown = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
 	AuraCooldown:SetDrawBling(false)
 	AuraCooldown:SetDrawSwipe(false)
+	AuraCooldown:SetDrawEdge(false)
 	button.AuraCooldown = AuraCooldown
 
 	-- Frame Scripts
@@ -577,7 +572,7 @@ local function PickupAny(kind, target, detail, ...)
 end
 
 function Generic:OnEvent(event, key, down)
-	if WoW10 or not GetCVarBool('lockActionBars') then return end
+	if not GetCVarBool('lockActionBars') then return end
 
 	if event == 'OnLeave' then
 		self:RegisterForClicks('AnyDown')
@@ -721,9 +716,7 @@ function Generic:UpdateConfig(config)
 	UpdateGrid(self)
 	Update(self, true)
 
-	if not WoW10 then
-		self:RegisterForClicks(self.config.clickOnDown and "AnyDown" or "AnyUp")
-	end
+	self:RegisterForClicks(self.config.clickOnDown and "AnyDown" or "AnyUp")
 end
 
 -----------------------------------------------------------
@@ -1294,7 +1287,7 @@ function Update(self, fromUpdateConfig)
 		self.icon:SetTexture(texture)
 		self.icon:Show()
 		self.rangeTimer = - 1
-		if not WoW10 then
+		if not WoWRetail then
 			self:SetNormalTexture("Interface\\Buttons\\UI-Quickslot2")
 			if not self.LBFSkinned and not self.MasqueSkinned then
 				self.NormalTexture:SetTexCoord(0, 0, 0, 0)
@@ -1309,7 +1302,7 @@ function Update(self, fromUpdateConfig)
 		else
 			self.HotKey:SetVertexColor(0.75, 0.75, 0.75)
 		end
-		if not WoW10 then
+		if not WoWRetail then
 			self:SetNormalTexture("Interface\\Buttons\\UI-Quickslot")
 			if not self.LBFSkinned and not self.MasqueSkinned then
 				self.NormalTexture:SetTexCoord(-0.15, 1.15, -0.15, 1.17)
@@ -1429,8 +1422,8 @@ local function StartChargeCooldown(parent, chargeStart, chargeDuration, chargeMo
 			cooldown = CreateFrame("Cooldown", "LAB10ChargeCooldown"..lib.NumChargeCooldowns, parent, "CooldownFrameTemplate");
 			cooldown:SetScript("OnCooldownDone", EndChargeCooldown)
 			cooldown:SetHideCountdownNumbers(true)
+			cooldown:SetDrawBling(false)
 			cooldown:SetDrawSwipe(false)
-			cooldown:SetEdgeScale(0)
 
 			lib.callbacks:Fire("OnChargeCreated", parent, cooldown)
 		end
@@ -1462,10 +1455,6 @@ local function OnCooldownDone(self)
 
 	self:SetScript("OnCooldownDone", nil)
 
-	if button.chargeCooldown then
-		button.chargeCooldown:SetDrawSwipe(false)
-	end
-
 	lib.callbacks:Fire("OnCooldownDone", button, self)
 end
 
@@ -1479,10 +1468,9 @@ local function LosCooldownDone(self)
 end
 
 function UpdateCooldown(self)
-	local locStart, locDuration
-	local start, duration, enable, modRate
+	local locStart, locDuration, _
+	local start, duration, modRate, auraData
 	local charges, maxCharges, chargeStart, chargeDuration, chargeModRate
-	local auraData
 
 	local passiveCooldownSpellID = self:GetPassiveCooldownSpellID()
 	if passiveCooldownSpellID and passiveCooldownSpellID ~= 0 then
@@ -1504,14 +1492,13 @@ function UpdateCooldown(self)
 		chargeStart = currentTime * 0.001
 		chargeDuration = duration * 0.001
 		chargeModRate = modRate
-		enable = 1
 	else
 		locStart, locDuration = self:GetLossOfControlCooldown()
-		start, duration, enable, modRate = self:GetCooldown()
+		start, duration, _, modRate = self:GetCooldown()
 		charges, maxCharges, chargeStart, chargeDuration, chargeModRate = self:GetCharges()
 	end
 
-	self.cooldown:SetDrawBling(self.config.useDrawBling and (self.cooldown:GetEffectiveAlpha() > 0.5))
+	self.cooldown:SetDrawBling(self.config.useDrawBling and (self:GetEffectiveAlpha() > 0.5))
 
 	if (locStart + locDuration) > (start + duration) then
 		if self.cooldown.currentCooldownType ~= COOLDOWN_TYPE_LOSS_OF_CONTROL then
@@ -1536,7 +1523,7 @@ function UpdateCooldown(self)
 		if charges and maxCharges and maxCharges > 1 and charges < maxCharges then
 			StartChargeCooldown(self, chargeStart, chargeDuration, chargeModRate)
 
-			self.chargeCooldown:SetDrawSwipe(duration <= 0 and self.config.useDrawSwipeOnCharges)
+			self.chargeCooldown:SetDrawSwipe(self.config.useDrawSwipeOnCharges)
 		elseif self.chargeCooldown then
 			EndChargeCooldown(self.chargeCooldown)
 		end
@@ -1916,11 +1903,6 @@ if WoWClassic then
 		-- if we don't have the library, only show count for items, like the default UI
 		Action.IsConsumableOrStackable = function(self) return IsItemAction(self._state_action) and (IsConsumableAction(self._state_action) or IsStackableAction(self._state_action)) end
 	end
-end
-
-if WoWClassic or WoWBCC or WoWWrath then
-	-- disable loss of control cooldown on classic
-	Action.GetLossOfControlCooldown = function(self) return 0,0 end
 end
 
 -----------------------------------------------------------

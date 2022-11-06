@@ -32,6 +32,7 @@ local IsCosmeticItem = IsCosmeticItem
 local IsInventoryItemProfessionBag = IsInventoryItemProfessionBag
 local IsReagentBankUnlocked = IsReagentBankUnlocked
 local PlaySound = PlaySound
+local PickupBagFromSlot = PickupBagFromSlot
 local PutItemInBackpack = PutItemInBackpack
 local PutItemInBag = PutItemInBag
 local PutKeyInKeyRing = PutKeyInKeyRing
@@ -84,7 +85,7 @@ local IG_BACKPACK_CLOSE = SOUNDKIT.IG_BACKPACK_CLOSE
 local IG_BACKPACK_OPEN = SOUNDKIT.IG_BACKPACK_OPEN
 local ITEMQUALITY_COMMON = Enum.ItemQuality.Common or Enum.ItemQuality.Standard
 local ITEMQUALITY_POOR = Enum.ItemQuality.Poor
-local MAX_WATCHED_TOKENS = MAX_WATCHED_TOKENS or 3
+local MAX_WATCHED_TOKENS = MAX_WATCHED_TOKENS or 20
 local NUM_BAG_FRAMES = NUM_BAG_FRAMES
 local NUM_BAG_SLOTS = NUM_BAG_SLOTS + (E.Retail and 1 or 0) -- add the profession bag
 local NUM_BANKGENERIC_SLOTS = NUM_BANKGENERIC_SLOTS
@@ -171,6 +172,7 @@ B.SearchSlots = {}
 B.QuestSlots = {}
 B.ItemLevelSlots = {}
 B.BAG_FILTER_ICONS = {}
+B.numTrackedTokens = 0
 
 if E.Retail then
 	B.BAG_FILTER_ICONS[FILTER_FLAG_EQUIPMENT] = 'bags-icon-equipment'
@@ -240,6 +242,7 @@ local bagEvents = {'BAG_UPDATE_DELAYED', 'BAG_UPDATE', 'BAG_CLOSED', 'ITEM_LOCK_
 local presistentEvents = {
 	PLAYERREAGENTBANKSLOTS_CHANGED = true,
 	PLAYERBANKSLOTS_CHANGED = true,
+	BAG_CONTAINER_UPDATE = true,
 	BAG_UPDATE_DELAYED = true,
 	BAG_UPDATE = true,
 	BAG_CLOSED = true
@@ -252,6 +255,8 @@ for bankID = bankOffset + 1, maxBankSlots do
 end
 
 if E.Retail then
+	tinsert(bagEvents, 'BAG_CONTAINER_UPDATE')
+	tinsert(bankEvents, 'BAG_CONTAINER_UPDATE')
 	tinsert(bankEvents, 'PLAYERREAGENTBANKSLOTS_CHANGED')
 	tinsert(bagIDs, 5)
 else
@@ -637,7 +642,7 @@ function B:UpdateSlot(frame, bagID, slotID)
 	local keyring = not E.Retail and (bagID == KEYRING_CONTAINER)
 	local info = B:GetContainerItemInfo(bagID, slotID) or {}
 
-	slot.name, slot.spellID, slot.itemID, slot.rarity, slot.locked, slot.readable, slot.itemLink = nil, nil, info.itemID, info.quality, info.isLocked, info.isReadable, info.hyperlink
+	slot.name, slot.spellID, slot.itemID, slot.rarity, slot.locked, slot.readable, slot.itemLink, slot.isBound = nil, nil, info.itemID, info.quality, info.isLocked, info.isReadable, info.hyperlink, info.isBound
 	slot.isJunk = (slot.rarity and slot.rarity == ITEMQUALITY_POOR) and not info.hasNoValue
 	slot.isEquipment, slot.junkDesaturate = nil, slot.isJunk and B.db.junkDesaturate
 	slot.hasItem = (info.iconFileID and 1) or nil -- used for ShowInspectCursor
@@ -766,6 +771,14 @@ function B:Slot_OnEnter()
 end
 
 function B:Slot_OnLeave() end
+
+function B:Holder_OnReceiveDrag()
+	PutItemInBag(self.isBank and self:GetInventorySlot() or self:GetID())
+end
+
+function B:Holder_OnDragStart()
+	PickupBagFromSlot(self.isBank and self:GetInventorySlot() or self:GetID())
+end
 
 function B:Holder_OnClick(button)
 	if self.BagID == BACKPACK_CONTAINER then
@@ -1059,6 +1072,59 @@ function B:Layout(isBank)
 		end
 	end
 
+	if not isBank then
+		local currencies = f.currencyButton
+		if B.numTrackedTokens == 0 then
+			if f.bottomOffset > 8 then
+				f.bottomOffset = 8
+			end
+		else
+			local currentRow = 1
+			local rowSize = B:TokenFrameWidth()
+
+			if E.Retail then
+				local rowWidth = 0
+				for i = 1, B.numTrackedTokens do
+					local token = currencies[i]
+					if not token then return end
+					local tokenWidth = token.text:GetWidth() + 28
+					rowWidth = rowWidth + tokenWidth
+					if rowWidth > (B.db.bagWidth - (B.db.bagButtonSpacing * 4)) then
+						currentRow = currentRow + 1
+						rowWidth = tokenWidth
+					end
+
+					if i == 1 then
+						token:Point('TOPLEFT', currencies, 1, -3)
+					elseif rowWidth == tokenWidth then
+						token:Point('TOPLEFT', currencies, 1 , -3 -(24 * (currentRow - 1)))
+					else
+						token:Point('TOPLEFT', currencies, rowWidth - tokenWidth , -3 - (24 * (currentRow - 1)))
+					end
+				end
+			else
+				local c1, c2, c3 = unpack(currencies)
+				if B.numTrackedTokens == 1 then
+					c1:Point('BOTTOM', currencies, -c1.text:GetWidth() * 0.5, 3)
+				elseif B.numTrackedTokens == 2 then
+					c1:Point('BOTTOM', currencies, -c1.text:GetWidth() - (c1:GetWidth() * 3), 3)
+					c2:Point('BOTTOMLEFT', currencies, 'BOTTOM', c2:GetWidth() * 3, 3)
+				else
+					c1:Point('BOTTOMLEFT', currencies, 3, 3)
+					c2:Point('BOTTOM', currencies, -c2.text:GetWidth() / 3, 3)
+					c3:Point('BOTTOMRIGHT', currencies, -c3.text:GetWidth() - (c3:GetWidth() * 0.5), 3)
+				end
+			end
+
+			local curHeight = 24 * currentRow
+			currencies:Height(curHeight)
+
+			if f.bottomOffset ~= (curHeight + 8) then
+				f.bottomOffset = (curHeight + 8)
+			end
+		end
+	end
+
 	if E.Retail and isBank and f.reagentFrame:IsShown() then
 		if not IsReagentBankUnlocked() then
 			f.reagentFrame.cover:Show()
@@ -1208,6 +1274,8 @@ function B:OnEvent(event, ...)
 				bag.staleSlots[slotID] = true
 			end
 		end
+	elseif event == 'BAG_CONTAINER_UPDATE' then
+		B:UpdateContainerIcons()
 	elseif event == 'BAG_UPDATE' or event == 'BAG_CLOSED' then
 		if not self.isBank or self:IsShown() then
 			B:DelayedContainer(self, event, ...)
@@ -1247,6 +1315,17 @@ function B:OnEvent(event, ...)
 	end
 end
 
+function B:TokenFrameWidth()
+	local tokenWidth = 70 -- you can always track at least one token
+	return max(floor((B.db.bagWidth - (B.db.bagButtonSpacing * 2)) / tokenWidth), 1)
+end
+
+function B:UpdateTokensIfVisible()
+	if B.BagFrame:IsVisible() then
+		B:UpdateTokens()
+	end
+end
+
 function B:UpdateTokens()
 	local bagFrame = B.BagFrame
 	local currencies = bagFrame.currencyButton
@@ -1279,28 +1358,9 @@ function B:UpdateTokens()
 		numTokens = numTokens + 1
 	end
 
-	if numTokens == 0 then
-		if bagFrame.bottomOffset > 8 then
-			bagFrame.bottomOffset = 8
-			B:Layout()
-		end
-	else
-		if bagFrame.bottomOffset < 28 then
-			bagFrame.bottomOffset = 28
-			B:Layout()
-		end
-
-		local c1, c2, c3 = unpack(currencies)
-		if numTokens == 1 then
-			c1:Point('BOTTOM', currencies, -c1.text:GetWidth() * 0.5, 3)
-		elseif numTokens == 2 then
-			c1:Point('BOTTOM', currencies, -c1.text:GetWidth() - (c1:GetWidth() * 3), 3)
-			c2:Point('BOTTOMLEFT', currencies, 'BOTTOM', c2:GetWidth() * 3, 3)
-		else
-			c1:Point('BOTTOMLEFT', currencies, 3, 3)
-			c2:Point('BOTTOM', currencies, -c2.text:GetWidth() / 3, 3)
-			c3:Point('BOTTOMRIGHT', currencies, -c3.text:GetWidth() - (c3:GetWidth() * 0.5), 3)
-		end
+	if numTokens ~= B.numTrackedTokens then
+		B.numTrackedTokens = numTokens
+		B:Layout()
 	end
 end
 
@@ -1443,6 +1503,21 @@ function B:ToggleBag(holder)
 	B:Layout(holder.isBank)
 end
 
+function B:UpdateContainerIcons()
+	if not B.BagFrame then return end
+
+	-- this only executes for the main bag, the bank bag doesn't use this
+	for bagID, holder in next, B.BagFrame.ContainerHolderByBagID do
+		B:UpdateContainerIcon(holder, bagID)
+	end
+end
+
+function B:UpdateContainerIcon(holder, bagID)
+	if not holder or not bagID or bagID == BACKPACK_CONTAINER or bagID == KEYRING_CONTAINER then return end
+
+	holder.icon:SetTexture(GetInventoryItemTexture('player', ContainerIDToInventoryID(bagID)) or 136511)
+end
+
 function B:ConstructContainerFrame(name, isBank)
 	local strata = B.db.strata or 'HIGH'
 
@@ -1558,19 +1633,20 @@ function B:ConstructContainerFrame(name, isBank)
 			holder:SetScript('OnReceiveDrag', PutItemInBackpack)
 		elseif bagID == KEYRING_CONTAINER then
 			holder:SetScript('OnReceiveDrag', PutKeyInKeyRing)
-		elseif isBank then
-			holder:SetID(i == 1 and BANK_CONTAINER or (bagID - bankOffset))
-			holder:RegisterEvent('PLAYERBANKSLOTS_CHANGED')
-			holder:SetScript('OnEvent', BankFrameItemButton_UpdateLocked)
 		else
-			local id, icon = 5, 136511
-			if bagID ~= 5 then
-				id = GetInventorySlotInfo(format('Bag%dSlot', bagID-1))
-				icon = GetInventoryItemTexture('player', ContainerIDToInventoryID(bagID))
-			end
+			holder:RegisterForDrag('LeftButton')
+			holder:SetScript('OnDragStart', B.Holder_OnDragStart)
+			holder:SetScript('OnReceiveDrag', B.Holder_OnReceiveDrag)
 
-			holder:SetID(id)
-			holder.icon:SetTexture(icon)
+			if isBank then
+				holder:SetID(i == 1 and BANK_CONTAINER or (bagID - bankOffset))
+				holder:RegisterEvent('PLAYERBANKSLOTS_CHANGED')
+				holder:SetScript('OnEvent', BankFrameItemButton_UpdateLocked)
+			else
+				holder:SetID(bagID == 5 and 5 or GetInventorySlotInfo(format('Bag%dSlot', bagID-1)))
+
+				B:UpdateContainerIcon(holder, bagID)
+			end
 		end
 
 		if i == 1 then
@@ -1872,9 +1948,9 @@ function B:ConstructContainerFrame(name, isBank)
 		if E.Retail or E.Wrath then
 			--Currency
 			f.currencyButton = CreateFrame('Frame', nil, f)
-			f.currencyButton:Point('BOTTOM', 0, 4)
-			f.currencyButton:Point('TOPLEFT', f.holderFrame, 'BOTTOMLEFT', 0, 18)
-			f.currencyButton:Point('TOPRIGHT', f.holderFrame, 'BOTTOMRIGHT', 0, 18)
+			f.currencyButton:Point('BOTTOM', 0, -6)
+			f.currencyButton:Point('BOTTOMLEFT', f.holderFrame, 'BOTTOMLEFT', 0, -6)
+			f.currencyButton:Point('BOTTOMRIGHT', f.holderFrame, 'BOTTOMRIGHT', 0, -6)
 			f.currencyButton:Height(22)
 
 			for i = 1, MAX_WATCHED_TOKENS do
@@ -2138,6 +2214,7 @@ function B:OpenBags()
 	end
 
 	B.BagFrame:Show()
+	if E.Retail then B:UpdateTokensIfVisible() end
 
 	PlaySound(IG_BACKPACK_OPEN)
 
@@ -2145,10 +2222,13 @@ function B:OpenBags()
 end
 
 function B:CloseBags()
-	B.BagFrame:Hide()
-	B.BankFrame:Hide()
+	local bag, bank = B.BagFrame:IsShown(), B.BankFrame:IsShown()
+	if bag or bank then
+		if bag then B.BagFrame:Hide() end
+		if bank then B.BankFrame:Hide() end
 
-	PlaySound(IG_BACKPACK_CLOSE)
+		PlaySound(IG_BACKPACK_CLOSE)
+	end
 
 	TT:GameTooltip_SetDefaultAnchor(GameTooltip)
 end
@@ -2758,8 +2838,10 @@ function B:Initialize()
 
 	if E.Wrath then
 		B:SecureHook('BackpackTokenFrame_Update', 'UpdateTokens')
-	else
-		B:SecureHook(_G.BackpackTokenFrame, 'Update', 'UpdateTokens')
+	elseif E.Retail then
+		B:SecureHook(_G.BackpackTokenFrame, 'Update', 'UpdateTokensIfVisible')
+		B:SecureHook(_G.BackpackTokenFrame, 'UpdateIfVisible', 'UpdateTokensIfVisible')
+		B:SecureHook(_G.TokenFramePopup.BackpackCheckBox, 'OnClick', 'UpdateTokensIfVisible')
 	end
 
 	if E.Retail then

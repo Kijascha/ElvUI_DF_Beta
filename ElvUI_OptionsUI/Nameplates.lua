@@ -556,8 +556,11 @@ E.Options.args.nameplates.args.colorsGroup.args.COMBO_POINTS = ACH:Group(L["COMB
 E.Options.args.nameplates.args.colorsGroup.args.COMBO_POINTS.args.chargedComboPoint = ACH:Color(L["Charged Combo Point"], nil, 13, nil, nil, function(info) local t, d = E.db.nameplates.colors.classResources[info[#info]], P.nameplates.colors.classResources[info[#info]] return t.r, t.g, t.b, t.a, d.r, d.g, d.b end, function(info, r, g, b) local t = E.db.nameplates.colors.classResources[info[#info]] t.r, t.g, t.b = r, g, b NP:ConfigureAll() end, nil, not E.Retail)
 E.Options.args.nameplates.args.colorsGroup.args.COMBO_POINTS.inline = true
 
-for i = 1, 6 do
-	E.Options.args.nameplates.args.colorsGroup.args.CHI_POWER.args[''..i] = ACH:Color(L["CHI_POWER"]..' #'..i)
+for i = 1, 7 do
+	if i ~= 7 then
+		E.Options.args.nameplates.args.colorsGroup.args.CHI_POWER.args[''..i] = ACH:Color(L["CHI_POWER"]..' #'..i)
+	end
+
 	E.Options.args.nameplates.args.colorsGroup.args.COMBO_POINTS.args[''..i] = ACH:Color(L["COMBO_POINTS"]..' #'..i)
 end
 
@@ -567,12 +570,12 @@ E.Options.args.nameplates.args.colorsGroup.args.RUNES.inline = true
 do
 	local runeText = { [-1] = L["RUNE_CHARGE"], [0] = L["RUNES"], L["RUNE_BLOOD"], L["RUNE_FROST"], L["RUNE_UNHOLY"], L["RUNE_DEATH"] }
 	for i = -1, 4 do
-		E.Options.args.nameplates.args.colorsGroup.args.RUNES.args[''..i] = ACH:Color(runeText[i], nil, i == -1 and 10 or i, nil, nil, nil, nil, function() return i == -1 and not E.db.nameplates.colors.chargingRunes end, function() return (E.Wrath and i < 1) or (not E.Wrath and i == 4) or (E.db.nameplates.colors.runeBySpec and i == 0) or (not E.db.nameplates.colors.runeBySpec and i > 0) end)
+		E.Options.args.nameplates.args.colorsGroup.args.RUNES.args[''..i] = ACH:Color(runeText[i], nil, i == -1 and 10 or i, nil, nil, nil, nil, function() return i == -1 and not E.db.nameplates.colors.chargingRunes end, function() return (E.Wrath and i < 1) or (not E.Wrath and i == 4) or (E.Retail and E.db.unitframe.colors.runeBySpec and i == 0) or (E.Retail and not E.db.unitframe.colors.runeBySpec and i > 0) end)
 	end
 end
 
 E.Options.args.nameplates.args.colorsGroup.args.RUNES.args.runeBySpec = ACH:Toggle(L["Color By Spec"], nil, 11, nil, nil, nil, function(info) return E.db.nameplates.colors[info[#info]] end, function(info, value) E.db.nameplates.colors[info[#info]] = value NP:ConfigureAll() end, nil, not E.Retail)
-E.Options.args.nameplates.args.colorsGroup.args.RUNES.args.chargingRunes = ACH:Toggle(L["Charging Rune Color"], nil, 11, nil, nil, nil, function(info) return E.db.nameplates.colors[info[#info]] end, function(info, value) E.db.nameplates.colors[info[#info]] = value NP:ConfigureAll() end, nil, not E.Retail)
+E.Options.args.nameplates.args.colorsGroup.args.RUNES.args.chargingRunes = ACH:Toggle(E.Retail and L["Charging Rune Color"] or L["Faded Charging Rune"], nil, 11, nil, nil, nil, function(info) return E.db.nameplates.colors[info[#info]] end, function(info, value) E.db.nameplates.colors[info[#info]] = value NP:ConfigureAll() end)
 
 E.Options.args.nameplates.args.playerGroup = GetUnitSettings('PLAYER', L["Player"])
 E.Options.args.nameplates.args.friendlyPlayerGroup = GetUnitSettings('FRIENDLY_PLAYER', L["FRIENDLY_PLAYER"])

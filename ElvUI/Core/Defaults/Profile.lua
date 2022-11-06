@@ -723,13 +723,13 @@ P.nameplates = {
 		classResources = {
 			chargedComboPoint = { r = 0.16, g = 0.64, b = 1.0 },
 			comboPoints = {
-				{r = .69, g = .31, b = .31},
-				{r = .65, g = .42, b = .31},
-				{r = .65, g = .63, b = .35},
-				{r = .46, g = .63, b = .35},
-				{r = .33, g = .63, b = .33},
-				{r = .33, g = .63, b = .33},
-				{r = .33, g = .63, b = .33},
+				{r = 0.75, g = 0.31, b = 0.31},
+				{r = 0.78, g = 0.56, b = 0.31},
+				{r = 0.81, g = 0.81, b = 0.31},
+				{r = 0.56, g = 0.78, b = 0.31},
+				{r = 0.43, g = 0.76, b = 0.31},
+				{r = 0.31, g = 0.75, b = 0.31},
+				{r = 0.36, g = 0.81, b = 0.54},
 			},
 			DEATHKNIGHT = {
 				[-1] = {r = 0.5, g = 0.5, b = 0.5},
@@ -742,12 +742,12 @@ P.nameplates = {
 			PALADIN = { r = 0.89, g = 0.88, b = 0.06},
 			MAGE = { r = 0, g = 0.62, b = 1},
 			MONK = {
-				{r = .57, g = .63, b = .35},
-				{r = .47, g = .63, b = .35},
-				{r = .37, g = .63, b = .35},
-				{r = .27, g = .63, b = .33},
-				{r = .17, g = .63, b = .33},
-				{r = 0.05, g = 0.57, b = 0.23}
+				{r = 0.71, g = 0.76, b = 0.32},
+				{r = 0.58, g = 0.73, b = 0.36},
+				{r = 0.49, g = 0.71, b = 0.39},
+				{r = 0.39, g = 0.69, b = 0.42},
+				{r = 0.27, g = 0.66, b = 0.46},
+				{r = 0.14, g = 0.63, b = 0.50}
 			},
 			WARLOCK = {r = 0.58, g = 0.51, b = 0.79}
 		},
@@ -1703,13 +1703,13 @@ P.unitframe = {
 		classResources = {
 			chargedComboPoint = { r = 0.16, g = 0.64, b = 1.0 },
 			comboPoints = {
-				{r = .69, g = .31, b = .31},
-				{r = .65, g = .42, b = .31},
-				{r = .65, g = .63, b = .35},
-				{r = .46, g = .63, b = .35},
-				{r = .33, g = .63, b = .33},
-				{r = .33, g = .63, b = .33},
-				{r = .33, g = .63, b = .33},
+				{r = 0.75, g = 0.31, b = 0.31},
+				{r = 0.78, g = 0.56, b = 0.31},
+				{r = 0.81, g = 0.81, b = 0.31},
+				{r = 0.56, g = 0.78, b = 0.31},
+				{r = 0.43, g = 0.76, b = 0.31},
+				{r = 0.31, g = 0.75, b = 0.31},
+				{r = 0.36, g = 0.81, b = 0.54},
 			},
 			DEATHKNIGHT = {
 				[-1] = {r = 0.5, g = 0.5, b = 0.5},
@@ -1722,12 +1722,12 @@ P.unitframe = {
 			PALADIN = {r = 0.89, g = 0.88, b = 0.06},
 			MAGE = {r = 0, g = 0.62, b = 1.00},
 			MONK = {
-				{r = .57, g = .63, b = .35},
-				{r = .47, g = .63, b = .35},
-				{r = .37, g = .63, b = .35},
-				{r = .27, g = .63, b = .33},
-				{r = .17, g = .63, b = .33},
-				{r = 0.05, g = 0.57, b = 0.23}
+				{r = 0.71, g = 0.76, b = 0.32},
+				{r = 0.58, g = 0.73, b = 0.36},
+				{r = 0.49, g = 0.71, b = 0.39},
+				{r = 0.39, g = 0.69, b = 0.42},
+				{r = 0.27, g = 0.66, b = 0.46},
+				{r = 0.14, g = 0.63, b = 0.50}
 			},
 			SHAMAN = {
 				{r = .23, g = .45, b = .13}, -- earth
@@ -2675,7 +2675,7 @@ P.actionbar.bar1.visibility = E.Retail and '[petbattle] hide; show' or 'show'
 
 P.actionbar.bar1.paging.ROGUE = '[bonusbar:1] 7;'..(E.Wrath and ' [bonusbar:2] 8;' or '')
 P.actionbar.bar1.paging.WARLOCK = E.Wrath and '[form:1] 7;' or nil
-P.actionbar.bar1.paging.DRUID = format('[bonusbar:1,nostealth] 7; [bonusbar:1,stealth] 8; [bonusbar:2] %d; [bonusbar:3] 9; [bonusbar:4] 10;', E.Retail and 10 or 8) -- No idea why tho
+P.actionbar.bar1.paging.DRUID = '[bonusbar:1,nostealth] 7; [bonusbar:1,stealth] 8; [bonusbar:2] 10; [bonusbar:3] 9; [bonusbar:4] 10;'
 P.actionbar.bar1.paging.EVOKER = '[bonusbar:1] 7;'
 P.actionbar.bar1.paging.PRIEST = '[bonusbar:1] 7;'
 P.actionbar.bar1.paging.WARRIOR = '[bonusbar:1] 7; [bonusbar:2] 8; [bonusbar:3] 9;'

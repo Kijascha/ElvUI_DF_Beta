@@ -2,8 +2,8 @@ local E, L, V, P, G = unpack(ElvUI)
 local AB = E:GetModule('ActionBars')
 
 local _G = _G
-local ipairs, pairs, strmatch, next, unpack = ipairs, pairs, strmatch, next, unpack
-local format, gsub, strsplit, strfind, strupper, tremove = format, gsub, strsplit, strfind, strupper, tremove
+local ipairs, pairs, strmatch, next, unpack, tonumber = ipairs, pairs, strmatch, next, unpack, tonumber
+local format, gsub, strsplit, strfind, strsub, strupper = format, gsub, strsplit, strfind, strsub, strupper
 
 local ClearOnBarHighlightMarks = ClearOnBarHighlightMarks
 local ClearOverrideBindings = ClearOverrideBindings
@@ -425,36 +425,40 @@ function AB:CreateVehicleLeave()
 	local db = E.db.actionbar.vehicleExitButton
 	if not db.enable then return end
 
+	local button = _G.MainMenuBarVehicleLeaveButton
 	local holder = CreateFrame('Frame', 'VehicleLeaveButtonHolder', E.UIParent)
-	holder:Point('BOTTOM', E.UIParent, 'BOTTOM', 0, 300)
-	holder:Size(_G.MainMenuBarVehicleLeaveButton:GetSize())
+	holder:Point('BOTTOM', E.UIParent, 0, 300)
+	holder:Size(button:GetSize())
 	E:CreateMover(holder, 'VehicleLeaveButton', L["VehicleLeaveButton"], nil, nil, nil, 'ALL,ACTIONBARS', nil, 'actionbar,extraButtons,vehicleExitButton')
 
-	local Button = _G.MainMenuBarVehicleLeaveButton
-	Button:ClearAllPoints()
-	Button:SetParent(_G.UIParent)
-	Button:Point('CENTER', holder, 'CENTER')
+	button:ClearAllPoints()
+	button:SetParent(_G.UIParent)
+	button:Point('CENTER', holder)
+
+	-- taints because of EditModeManager, in UpdateBottomActionBarPositions
+	button:SetScript('OnShow', nil)
+	button:SetScript('OnHide', nil)
 
 	if MasqueGroup and E.private.actionbar.masque.actionbars then
-		Button:StyleButton(true, true, true)
+		button:StyleButton(true, true, true)
 	else
-		Button:CreateBackdrop(nil, true)
-		Button:GetNormalTexture():SetTexCoord(0.140625 + .08, 0.859375 - .06, 0.140625 + .08, 0.859375 - .08)
-		Button:GetPushedTexture():SetTexCoord(0.140625, 0.859375, 0.140625, 0.859375)
-		Button:StyleButton(nil, true, true)
+		button:CreateBackdrop(nil, true)
+		button:GetNormalTexture():SetTexCoord(0.140625 + .08, 0.859375 - .06, 0.140625 + .08, 0.859375 - .08)
+		button:GetPushedTexture():SetTexCoord(0.140625, 0.859375, 0.140625, 0.859375)
+		button:StyleButton(nil, true, true)
+
+		hooksecurefunc(button, 'SetHighlightTexture', function(btn, tex)
+			if tex ~= btn.hover then
+				button:SetHighlightTexture(btn.hover)
+			end
+		end)
 	end
 
-	hooksecurefunc(Button, 'SetPoint', function(_, _, parent)
+	hooksecurefunc(button, 'SetPoint', function(_, _, parent)
 		if parent ~= holder then
-			Button:ClearAllPoints()
-			Button:SetParent(_G.UIParent)
-			Button:Point('CENTER', holder, 'CENTER')
-		end
-	end)
-
-	hooksecurefunc(Button, 'SetHighlightTexture', function(btn, tex)
-		if tex ~= btn.hover then
-			Button:SetHighlightTexture(btn.hover)
+			button:ClearAllPoints()
+			button:SetParent(_G.UIParent)
+			button:Point('CENTER', holder)
 		end
 	end)
 
@@ -634,7 +638,7 @@ function AB:StyleButton(button, noBackdrop, useMasque, ignoreNormal)
 	if border and not button.useMasque then border:Kill() end
 	if action then action:SetAlpha(0) end
 	if slotbg then slotbg:Hide() end
-	if mask then mask:Hide() end
+	if mask and not button.useMasque then mask:Hide() end
 
 	if count then
 		local position, xOffset, yOffset = db and db.countTextPosition or 'BOTTOMRIGHT', db and db.countTextXOffset or 0, db and db.countTextYOffset or 2
@@ -996,48 +1000,39 @@ end
 
 do
 	local untaint = {
-		MainMenuBar = true,
-		MicroButtonAndBagsBar = true
-	}
-
-	local removeEvents = {
+		MultiBar5 = true,
+		MultiBar6 = true,
+		MultiBar7 = true,
+		MultiBarLeft = true,
+		MultiBarRight = true,
+		MultiBarBottomLeft = true,
+		MultiBarBottomRight = true,
+		MicroButtonAndBagsBar = true,
 		OverrideActionBar = true,
-		MultiCastActionBarFrame = not E.Wrath or nil, -- skip
+		MainMenuBar = true,
 		[E.Retail and 'StanceBar' or 'StanceBarFrame'] = true,
 		[E.Retail and 'PetActionBar' or 'PetActionBarFrame'] = true,
 		[E.Retail and 'PossessActionBar' or 'PossessBarFrame'] = true
 	}
 
-	local skipNoopsi = {
-		MultiBarBottomLeft = true,
-		MultiBarBottomRight = true,
-		MultiBarLeft = true,
-		MultiBarRight = true
-	}
-
-	-- import to the main table
-	E:CopyTable(untaint, removeEvents)
-	E:CopyTable(untaint, skipNoopsi)
+	if E.Wrath then -- TotemBar: this still might taint
+		untaint.MultiCastActionBarFrame = true
+	end
 
 	function AB:DisableBlizzard()
-		if E.Wrath then -- TotemBar: this still might taint
-			_G.UIPARENT_MANAGED_FRAME_POSITIONS.MultiCastActionBarFrame = nil
-		end
-
 		for name in next, untaint do
 			if not E.Retail then
 				_G.UIPARENT_MANAGED_FRAME_POSITIONS[name] = nil
+			elseif name == 'PetActionBar' then -- this fixes the pet bar getting replaced by EditMode
+				_G.PetActionBar.UpdateGridLayout = E.noop
 			end
 
 			local frame = _G[name]
 			if frame then
 				frame:SetParent(E.HiddenFrame)
+				frame:UnregisterAllEvents()
 
-				if removeEvents[name] then
-					frame:UnregisterAllEvents()
-				end
-
-				if not E.Retail or not skipNoopsi[name] then
+				if not E.Retail then
 					AB:SetNoopsi(frame)
 				end
 			end
@@ -1054,13 +1049,14 @@ do
 
 		-- shut down some events for things we dont use
 		_G.ActionBarButtonEventsFrame:UnregisterAllEvents()
-		_G.ActionBarButtonEventsFrame:RegisterEvent('ACTIONBAR_SLOT_CHANGED') -- these are needed to let the ExtraActionButton show
-		_G.ActionBarButtonEventsFrame:RegisterEvent('ACTIONBAR_UPDATE_COOLDOWN') -- needed for ExtraActionBar cooldown
 		_G.ActionBarActionEventsFrame:UnregisterAllEvents()
 		_G.ActionBarController:UnregisterAllEvents()
 
 		if E.Retail then
 			_G.StatusTrackingBarManager:UnregisterAllEvents()
+			_G.ActionBarButtonEventsFrame:RegisterEvent('ACTIONBAR_SLOT_CHANGED') -- these are needed to let the ExtraActionButton show
+			_G.ActionBarButtonEventsFrame:RegisterEvent('ACTIONBAR_UPDATE_COOLDOWN') -- needed for ExtraActionBar cooldown
+			_G.ActionBarController:RegisterEvent('SETTINGS_LOADED') -- this is needed for page controller to spawn properly
 			_G.ActionBarController:RegisterEvent('UPDATE_EXTRA_ACTIONBAR') -- this is needed to let the ExtraActionBar show
 
 			-- lets only keep ExtraActionButtons in here
@@ -1069,6 +1065,29 @@ do
 
 			AB:IconIntroTracker_Toggle() --Enable/disable functionality to automatically put spells on the actionbar.
 			_G.IconIntroTracker:HookScript('OnEvent', AB.IconIntroTracker_Skin)
+
+			-- fix keybind error, this actually just prevents reopen of the GameMenu
+			_G.SettingsPanel.TransitionBackOpeningPanel = _G.HideUIPanel
+
+			-- change the text of the remove paging
+			hooksecurefunc(_G.SettingsPanel.Container.SettingsList.ScrollBox, 'Update', function(frame)
+				for _, child in next, { frame.ScrollTarget:GetChildren() } do
+					local option = child.data and child.data.setting
+					local variable = option and option.variable
+					if variable and strsub(variable, 0, -3) == 'PROXY_SHOW_ACTIONBAR' then
+						local num = tonumber(strsub(variable, 22))
+						if num and num <= 5 then -- NUM_ACTIONBAR_PAGES - 1
+							child.Text:SetFormattedText(L["Remove Bar %d Action Page"], num)
+						else
+							child.CheckBox:SetEnabled(false)
+							child:DisplayEnabled(false)
+						end
+
+						child.CheckBox:SetScript('OnEnter', nil)
+						child.Tooltip:SetScript('OnEnter', nil)
+					end
+				end
+			end)
 		else
 			AB:SetNoopsi(_G.MainMenuBarArtFrame)
 			AB:SetNoopsi(_G.MainMenuBarArtFrameBackground)
@@ -1504,9 +1523,7 @@ end
 function AB:PLAYER_ENTERING_WORLD(event, initLogin, isReload)
 	AB:AdjustMaxStanceButtons(event)
 
-	if not initLogin and not isReload then
-		AB:PositionAndSizeBarPet() -- for some reason on DF when you portal your pet bar placement is reset
-	elseif (E.Wrath and E.myclass == 'SHAMAN') and AB.db.totemBar.enable then
+	if (initLogin or isReload) and (E.Wrath and E.myclass == 'SHAMAN') and AB.db.totemBar.enable then
 		AB:SecureHook('ShowMultiCastActionBar', 'PositionAndSizeTotemBar')
 		AB:PositionAndSizeTotemBar()
 	end
